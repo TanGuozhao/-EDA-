@@ -1,0 +1,96 @@
+markdown
+# 芯语智问：EDA全链路智能学习与实验平台
+
+---
+
+## 📁 文件架构
+eda-platform/
+├── backend/ # 后端服务（FastAPI + MySQL）
+│ ├── app/ # 主代码目录
+│ │ ├── main.py # 应用入口
+│ │ ├── api/ # 接口层
+│ │ │ ├── routers/ # 路由
+│ │ │ │ ├── chapters.py # 章节/关卡接口（平台A）
+│ │ │ │ ├── questions.py # 题库接口（平台B）
+│ │ │ │ └── eda_jobs.py # EDA工具接口（平台C）
+│ │ │ └── deps.py # 依赖注入
+│ │ ├── domain/ # 领域实体（数据模型）
+│ │ │ └── entities/ # 实体类
+│ │ ├── schemas/ # Pydantic请求/响应模型
+│ │ ├── use_cases/ # 业务逻辑
+│ │ │ ├── users/ # 用户（平台A）
+│ │ │ ├── chapters/ # 章节（平台A）
+│ │ │ ├── questions/ # 题库（平台B）
+│ │ │ ├── submissions/ # 提交判题（平台B）
+│ │ │ └── eda/ # EDA工具（平台C）
+│ │ ├── adapters/ # 外部适配层
+│ │ │ ├── db/mysql/ # MySQL数据库
+│ │ │ │ ├── database.py # 数据库连接
+│ │ │ │ └── models.py # ORM模型
+│ │ │ └── external/ # 外部服务
+│ │ │ └── eda_tool_wrappers/# EDA工具封装
+│ │ ├── services/ # 服务层
+│ │ └── utils/ # 工具函数
+│ ├── tests/ # 测试
+│ ├── database/ # SQL文件
+│ │ └── eda_platform_dump.sql # 完整建表+初始数据
+│ ├── requirements.txt # Python依赖
+│ ├── .env.example # 环境变量模板
+│ └── .gitignore
+│
+├── frontend/ # 前端（待建）
+└── README.md # 本文件
+
+text
+
+---
+
+## 🛠️ 本地部署运行
+
+### 环境要求
+- Python 3.10+
+- MySQL 8.0
+
+---
+
+### 方式一：本地安装 MySQL（推荐）
+
+#### 1. 安装 MySQL 8.0
+下载地址：https://dev.mysql.com/downloads/installer/
+
+安装时记住 Root 密码。
+
+#### 2. 克隆仓库
+```bash
+git clone <仓库地址>
+cd eda-platform
+3. 创建并导入数据库
+bash
+# 登录MySQL
+mysql -u root -p
+
+# 创建数据库
+CREATE DATABASE eda_platform CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+EXIT;
+
+# 导入表结构和初始数据
+mysql -u root -p eda_platform < backend/database/eda_platform_dump.sql
+4. 配置环境变量
+bash
+cd backend
+copy .env.example .env
+编辑 .env，把密码改成你的 MySQL 密码：
+
+text
+DATABASE_URL=mysql+pymysql://root:你的密码@localhost:3306/eda_platform
+5. 安装 Python 依赖
+bash
+pip install -r requirements.txt
+6. 启动服务
+bash
+uvicorn app.main:app --reload
+7. 验证
+打开浏览器访问：http://localhost:8000/docs
+
+看到 Swagger 接口文档即部署成功。
+
