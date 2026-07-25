@@ -32,3 +32,5 @@ htmlcov/
 
 # 日志
 *.log
+
+node_modules/
