@@ -3,6 +3,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+# ========== 远程版本的路由 ==========
 from app.api.routers.auth import router as auth_router
 from app.api.routers.chapters import router as chapters_router
 from app.api.routers.chat import router as chat_router
@@ -13,6 +14,11 @@ from app.api.routers.tutor import router as tutor_router
 from app.api.routers.yosys_design import router as yosys_design_router
 from app.api.routers.yosys_verilog import router as yosys_verilog_router
 from app.api.routers import questions, submissions, timing_analysis, timing_challenges
+
+# ========== 你本地版本的路由 ==========
+from app.api.routers import profile
+from app.api.routers import dynamic_questions
+from app.api.routers import rtl, hls  # 新加的任务一和任务二
 
 app = FastAPI(
     title="EDA Learning Platform",
@@ -34,6 +40,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ========== 注册路由 ==========
+
+# 远程版本的路由
 app.include_router(chapters_router, prefix="/api/chapters", tags=["chapters"])
 app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
 app.include_router(chat_router, prefix="/api/chat", tags=["chat"])
@@ -47,6 +56,14 @@ app.include_router(timing_challenges.router, prefix="/api/timing-analysis", tags
 app.include_router(hls_challenges_router, prefix="/api/hls", tags=["hls"])
 app.include_router(tutor_router, prefix="/api/tutor", tags=["tutor"])
 app.include_router(llm_router, prefix="/v1", tags=["llm"])
+
+# 你本地版本的路由（保留）
+app.include_router(profile.router, prefix="/api/profile", tags=["学习画像"])
+app.include_router(dynamic_questions.router, prefix="/api/dynamic", tags=["动态出题"])
+
+# 新加的任务一和任务二
+app.include_router(rtl.router, prefix="/api/rtl", tags=["RTL设计"])
+app.include_router(hls.router, prefix="/api/hls", tags=["高级综合"])
 
 
 @app.get("/health")
