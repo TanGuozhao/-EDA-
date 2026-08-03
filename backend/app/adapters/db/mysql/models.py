@@ -136,6 +136,55 @@ class AgentToolAudit(Base):
     created_at = Column(DateTime, nullable=False, server_default=func.now())
 
 
+class ChatSession(Base):
+    __tablename__ = "chat_sessions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    title = Column(String(120), nullable=False)
+    mode = Column(String(40), nullable=False, default="eda")
+    reply_style = Column(String(40), nullable=False, default="default")
+    last_message_at = Column(DateTime, nullable=False, server_default=func.now(), index=True)
+    created_at = Column(DateTime, nullable=False, server_default=func.now())
+    updated_at = Column(DateTime, nullable=False, server_default=func.now(), onupdate=func.now())
+
+    messages = relationship(
+        "ChatMessage",
+        back_populates="session",
+        cascade="all, delete-orphan",
+        order_by="ChatMessage.created_at",
+    )
+
+    __table_args__ = (
+        Index("ix_chat_sessions_user_last_message", "user_id", "last_message_at"),
+    )
+
+
+class ChatMessage(Base):
+    __tablename__ = "chat_messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    session_id = Column(Integer, ForeignKey("chat_sessions.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    role = Column(String(20), nullable=False)
+    content = Column(Text, nullable=False)
+    summary = Column(Text)
+    model = Column(String(120))
+    request_id = Column(String(128), index=True)
+    skill_id = Column(String(128))
+    attachment_ids = Column(JSON, nullable=False, default=list)
+    rag_sources = Column(JSON, nullable=False, default=list)
+    tool_calls = Column(JSON, nullable=False, default=list)
+    created_at = Column(DateTime, nullable=False, server_default=func.now(), index=True)
+
+    session = relationship("ChatSession", back_populates="messages")
+
+    __table_args__ = (
+        CheckConstraint("role IN ('user', 'assistant')", name="ck_chat_messages_role"),
+        Index("ix_chat_messages_session_created", "session_id", "created_at"),
+    )
+
+
 class TimingGraphRecord(Base):
     __tablename__ = "timing_graphs"
 

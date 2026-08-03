@@ -3,7 +3,9 @@
     <header class="header">
       <h1>芯语智问 - EDA 闯关平台</h1>
       <nav>
-        <router-link to="/chapters">一芯向前冲</router-link>
+        <router-link to="/eda-chat">智能问答</router-link>
+        <router-link to="/chapters">章节</router-link>
+        <router-link to="/chapter/2/high-level-synthesis">HLS 第一关</router-link>
         <router-link to="/timing-analysis">时序分析体验</router-link>
         <router-link v-if="currentUser" to="/me">{{ currentUser.userName || currentUser.account }}</router-link>
         <router-link v-else to="/login">登录</router-link>
@@ -35,8 +37,8 @@ export default {
     const route = useRoute()
     const router = useRouter()
     const currentUser = ref(getCurrentUser())
-    const isStandalonePrototype = computed(() => route.name === 'TimingAnalysisPrototype')
-    const showTutor = computed(() => !['CircuitVerseDemo', 'SchedulingDemo'].includes(route.name))
+    const isStandalonePrototype = computed(() => ['TimingAnalysisPrototype', 'HighLevelSynthesis', 'EdaChat'].includes(route.name))
+    const showTutor = computed(() => !['CircuitVerseDemo', 'SchedulingDemo', 'HighLevelSynthesis', 'EdaChat'].includes(route.name))
 
     function syncUser() {
       currentUser.value = getCurrentUser()

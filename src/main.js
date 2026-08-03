@@ -17,11 +17,14 @@ import TimingAnalysis from './views/TimingAnalysis.vue'
 import BlankTimingAnalysis from './views/BlankTimingAnalysis.vue'
 import CircuitVerseDemo from './views/CircuitVerseDemo.vue'
 import SchedulingDemo from './views/SchedulingDemo.vue'
+import HighLevelSynthesis from './views/HighLevelSynthesis.vue'
+import EdaChat from './views/EdaChat.vue'
 import './assets/styles.css'
 import { isAuthenticated } from './auth'
 
 const routes = [
   { path: '/', component: Landing, name: 'Landing' },
+  { path: '/eda-chat', component: EdaChat, name: 'EdaChat' },
   { path: '/login', component: Login, name: 'Login' },
   { path: '/register', component: Register, name: 'Register' },
   { path: '/me', component: Me, name: 'Me', meta: { requiresAuth: true } },
@@ -35,6 +38,7 @@ const routes = [
   { path: '/timing-analysis', component: TimingAnalysis, name: 'TimingAnalysisPrototype' },
   { path: '/circuitverse-demo', component: CircuitVerseDemo, name: 'CircuitVerseDemo' },
   { path: '/scheduling-demo', component: SchedulingDemo, name: 'SchedulingDemo' },
+  { path: '/chapter/2/high-level-synthesis', component: HighLevelSynthesis, name: 'HighLevelSynthesis' },
   { path: '/chapter/5/timing-analysis', component: BlankTimingAnalysis, name: 'ChapterTimingAnalysis' },
 ]
 

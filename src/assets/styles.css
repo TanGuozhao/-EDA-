@@ -58,6 +58,8 @@ a{text-decoration:none;color:inherit}
 .app:not(.standalone-prototype){display:flex;flex-direction:column;width:100%;height:100%;min-height:0;overflow:hidden}
 .app:not(.standalone-prototype) .main{flex:1 1 auto;min-height:0;overflow:auto;scrollbar-width:none;-ms-overflow-style:none}
 .app:not(.standalone-prototype) .main::-webkit-scrollbar{display:none}
+.standalone-prototype{display:flex;width:100%;height:100%;min-height:0;flex-direction:column;overflow:hidden}
+.standalone-prototype .main{width:100%;max-width:none;flex:1 1 auto;min-height:0;margin:0;padding:0;overflow:hidden}
 .launch{
   min-height:calc(100vh - 132px);
   display:flex;
@@ -66,6 +68,7 @@ a{text-decoration:none;color:inherit}
   justify-content:center;
   gap:16px;
 }
+.launch-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 .launch h2,.page-heading h2{margin:0;font-size:32px}
 .launch p,.page-heading p{margin:6px 0 0;color:var(--muted)}
 .page-heading{
@@ -450,4 +453,82 @@ a{text-decoration:none;color:inherit}
   .timing-form{grid-template-columns:1fr}
   .timing-bottom{align-items:stretch;flex-direction:column}
   .timing-btn-primary{width:100%}
+}
+
+/* EDA intelligent chat preview */
+.eda-chat-page{height:100%;min-height:0;display:grid;grid-template-columns:280px minmax(0,1fr) 330px;background:#f6f8fb;color:#132033}
+.eda-chat-sidebar,.eda-chat-sources{min-height:0;display:flex;flex-direction:column;background:#fbfcfe;border-color:#dfe7ef}
+.eda-chat-sidebar{border-right:1px solid #dfe7ef;padding:16px 12px}
+.eda-chat-sources{border-left:1px solid #dfe7ef;padding:18px 16px;overflow:auto}
+.eda-chat-new{min-height:42px;display:flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:8px;background:#1f7a8c;color:#fff;font:800 14px inherit;cursor:pointer}
+.eda-chat-new:hover{background:#0f4c5c}
+.eda-chat-search{height:40px;margin:14px 0;display:flex;align-items:center;gap:8px;border:1px solid #d8e1e8;border-radius:8px;padding:0 10px;background:#fff;color:#667085}
+.eda-chat-search input{width:100%;min-width:0;border:0;outline:0;background:transparent;color:#132033;font:600 13px inherit}
+.eda-chat-session-list{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;gap:8px;overflow:auto}
+.eda-chat-session{width:100%;min-height:68px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:5px;border:1px solid transparent;border-radius:8px;padding:10px 12px;background:transparent;color:#132033;text-align:left;cursor:pointer}
+.eda-chat-session:hover,.eda-chat-session.active{border-color:#d8e1e8;background:#fff;box-shadow:0 8px 18px rgba(19,32,51,.05)}
+.eda-chat-session strong{width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
+.eda-chat-session small,.eda-chat-empty-small,.eda-chat-source-empty{color:#667085;font-size:12px;line-height:1.55}
+.eda-chat-empty-small{padding:12px}
+.eda-chat-clear{min-height:38px;margin-top:12px;border:1px solid #d8e1e8;border-radius:8px;background:#fff;color:#667085;font:800 12px inherit;cursor:pointer}
+.eda-chat-clear:hover{color:#b42318;border-color:#ffd3cf;background:#fff7f6}
+.eda-chat-main{min-width:0;min-height:0;display:flex;flex-direction:column;background:linear-gradient(180deg,#f6f8fb 0%,#fff 48%,#f6f8fb 100%)}
+.eda-chat-welcome{flex:1 1 auto;min-height:0;width:min(820px,calc(100% - 48px));margin:0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:34px 0 20px}
+.eda-chat-orbit{width:74px;height:74px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:radial-gradient(circle at 36% 28%,#d9f4ff 0,#65bde3 34%,#2f6fed 100%);color:#fff;box-shadow:0 18px 46px rgba(47,111,237,.25);font-weight:900}
+.eda-chat-welcome h2{margin:22px 0 8px;font-size:32px;letter-spacing:0}
+.eda-chat-welcome p{width:min(620px,100%);margin:0;color:#667085;line-height:1.65}
+.eda-chat-suggestions{width:100%;margin-top:26px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.eda-chat-suggestions button{min-height:92px;border:1px solid #dfe7ef;border-radius:8px;padding:14px;background:#fff;color:#132033;text-align:left;cursor:pointer;box-shadow:0 8px 18px rgba(19,32,51,.04)}
+.eda-chat-suggestions button:hover{border-color:rgba(31,122,140,.45);transform:translateY(-1px)}
+.eda-chat-suggestions strong{display:block;font-size:14px}
+.eda-chat-suggestions small{display:block;margin-top:8px;color:#667085;line-height:1.45}
+.eda-chat-thread{flex:1 1 auto;min-height:0;width:min(900px,calc(100% - 44px));margin:0 auto;padding:26px 0 18px;overflow:auto}
+.eda-chat-message{display:grid;grid-template-columns:34px minmax(0,1fr);gap:12px;margin:0 0 18px}
+.eda-chat-message-user{grid-template-columns:minmax(0,1fr) 34px}
+.eda-chat-message-user .eda-chat-avatar{grid-column:2}
+.eda-chat-message-user .eda-chat-bubble{grid-column:1;grid-row:1;justify-self:end;background:#1f7a8c;color:#fff}
+.eda-chat-avatar{width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:#e8f3f5;color:#0f4c5c;font-weight:900;font-size:13px}
+.eda-chat-bubble{max-width:min(720px,100%);border:1px solid #dfe7ef;border-radius:8px;padding:12px 14px;background:#fff;box-shadow:0 8px 18px rgba(19,32,51,.05);line-height:1.72;white-space:pre-wrap}
+.eda-chat-bubble p{margin:0}.eda-chat-bubble p + p{margin-top:6px}
+.eda-chat-cursor{display:inline-block;width:7px;height:16px;margin-left:3px;vertical-align:-2px;background:#1f7a8c;animation:edaChatCursor 1s steps(1,end) infinite}
+@keyframes edaChatCursor{50%{opacity:.1}}
+.eda-chat-composer-wrap{width:min(900px,calc(100% - 44px));margin:0 auto 18px;border:1px solid #d8e1e8;border-radius:8px;background:#fff;box-shadow:0 18px 44px rgba(19,32,51,.1);overflow:hidden}
+.eda-chat-input{width:100%;min-height:90px;max-height:210px;border:0;outline:0;padding:16px 18px 10px;resize:vertical;color:#132033;font:600 15px/1.6 inherit}
+.eda-chat-input::placeholder{color:#98a2b3}
+.eda-chat-composer-bar{min-height:52px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 10px 10px}
+.eda-chat-tools{display:flex;align-items:center;gap:8px;min-width:0;flex-wrap:wrap}
+.eda-chat-tool-btn,.eda-chat-send{border:0;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font:900 12px inherit}
+.eda-chat-tool-btn{min-width:42px;min-height:34px;padding:0 10px;background:#e8f3f5;color:#0f4c5c}
+.eda-chat-tool-btn:hover{background:#d9edf1}
+.eda-chat-send{width:40px;height:40px;background:#1f7a8c;color:#fff;font-size:16px}
+.eda-chat-send:hover{background:#0f4c5c}.eda-chat-send:disabled{cursor:not-allowed;opacity:.45}
+.eda-chat-select{height:34px;border:1px solid #d8e1e8;border-radius:8px;padding:0 9px;background:#fbfcfe;color:#132033;font:800 12px inherit}
+.eda-chat-hint{margin:0;padding:0 18px 14px;color:#667085;font-size:12px;line-height:1.45}
+.eda-chat-attachments{display:flex;gap:8px;flex-wrap:wrap;padding:12px 14px 0}
+.eda-chat-attachment-chip{max-width:280px;min-height:48px;display:grid;grid-template-columns:42px minmax(0,1fr) 28px;align-items:center;gap:8px;border:1px solid #dfe7ef;border-radius:8px;padding:6px;background:#fbfcfe}
+.eda-chat-attachment-chip > span{min-width:36px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:7px;background:#eaf1ff;color:#2f6fed;font-size:11px;font-weight:900}
+.eda-chat-attachment-chip strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
+.eda-chat-attachment-chip small{color:#667085;font-size:11px}
+.eda-chat-attachment-chip button{width:26px;height:26px;border:0;border-radius:6px;background:transparent;color:#667085;cursor:pointer}
+.eda-chat-attachment-chip button:hover{background:#fff0ef;color:#b42318}
+.eda-chat-source-header{padding-bottom:12px;border-bottom:1px solid #dfe7ef}
+.eda-chat-source-header span{color:#2f6fed;font-size:11px;font-weight:900;letter-spacing:.08em}
+.eda-chat-source-header h3{margin:4px 0 0;font-size:17px}
+.eda-chat-source-card{width:100%;margin-top:12px;border:1px solid #dfe7ef;border-radius:8px;padding:12px;background:#fff;text-align:left;color:#132033;cursor:pointer}
+.eda-chat-source-card:hover{border-color:rgba(47,111,237,.35);box-shadow:0 10px 20px rgba(19,32,51,.06)}
+.eda-chat-source-card small{color:#2f6fed;font-weight:900}
+.eda-chat-source-card strong{display:block;margin-top:5px;font-size:14px}
+.eda-chat-source-card p{margin:8px 0 0;color:#667085;font-size:12px;line-height:1.65}
+.eda-chat-source-empty{padding:14px 2px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media (max-width: 1180px){
+  .eda-chat-page{grid-template-columns:260px minmax(0,1fr)}
+  .eda-chat-sources{display:none}
+}
+@media (max-width: 760px){
+  .eda-chat-page{grid-template-columns:1fr}
+  .eda-chat-sidebar{display:none}
+  .eda-chat-welcome,.eda-chat-thread,.eda-chat-composer-wrap{width:calc(100% - 24px)}
+  .eda-chat-suggestions{grid-template-columns:1fr}
+  .eda-chat-welcome h2{font-size:28px}
 }
