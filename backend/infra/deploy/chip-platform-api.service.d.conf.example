@@ -1,0 +1,6 @@
+[Service]
+EnvironmentFile=/etc/chip-platform/api.env
+WorkingDirectory=/opt/chip-platform/backend
+StandardOutput=append:/var/log/chip-platform/api.log
+StandardError=append:/var/log/chip-platform/api.log
+

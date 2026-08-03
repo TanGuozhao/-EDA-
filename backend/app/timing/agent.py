@@ -9,6 +9,7 @@ from typing import Any
 
 from app.llm.config import LlmGatewaySettings, to_openai_compatible_provider
 from app.llm.openai_compatible import ChatGenerationOptions, OpenAICompatibleChatClient, build_messages
+from app.runtime_paths import get_required_path
 from app.timing.analysis import TimingAnalysisEngine, TimingAnalysisError
 from app.timing.dag_text import TimingDag, TimingDagParseError, parse_timing_dag_text
 
@@ -43,7 +44,7 @@ class TimingAnalysisAgent:
     ):
         self.settings = settings
         self.chat_client = chat_client or OpenAICompatibleChatClient(to_openai_compatible_provider(settings))
-        self.storage_dir = storage_dir or Path(__file__).resolve().parents[2] / "generated_timing_dags"
+        self.storage_dir = storage_dir or get_required_path("GENERATED_TIMING_DAGS_DIR")
 
     async def generate(self, *, topic: str, model: str | None = None) -> GeneratedTimingChallenge:
         prompt = self._prompt(topic)

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.adapters.db.mysql.database import get_db
@@ -16,11 +16,9 @@ def get_tools(db: Session = Depends(get_db)):
 def verify_tool(tool_id: int, db: Session = Depends(get_db)):
     tool = db.query(Tool).filter(Tool.id == tool_id).first()
     if not tool:
-        return {"status": "error", "message": "Tool not found"}
+        raise HTTPException(status_code=404, detail="Tool not found")
 
-    return {
-        "tool_id": tool_id,
-        "tool_name": tool.name,
-        "status": "pending",
-        "message": "Tool verification is a placeholder in the local dev environment.",
-    }
+    raise HTTPException(
+        status_code=501,
+        detail=f"Verification is not implemented for tool '{tool.name}'.",
+    )

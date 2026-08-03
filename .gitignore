@@ -41,3 +41,4 @@ backend/generated_timing_dags/
 scheduling-*.png
 timing-path-selection-scroll-check.png
 LLM/benchmark_output/
+temp/

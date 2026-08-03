@@ -117,6 +117,25 @@ class Tool(Base):
     created_at = Column(DateTime, server_default=func.now())
 
 
+class AgentToolAudit(Base):
+    __tablename__ = "agent_tool_audits"
+
+    id = Column(Integer, primary_key=True, index=True)
+    request_id = Column(String(128), nullable=False, index=True)
+    tool_id = Column(String(128), nullable=False, index=True)
+    user_id = Column(String(128), nullable=False, index=True)
+    session_id = Column(String(128))
+    agent_id = Column(String(128))
+    skill_id = Column(String(128))
+    arguments_summary = Column(JSON, nullable=False)
+    result_summary = Column(Text, nullable=False, default="")
+    status = Column(String(16), nullable=False)
+    error_code = Column(String(128))
+    elapsed_ms = Column(Integer)
+    resource_ids = Column(JSON, nullable=False, default=list)
+    created_at = Column(DateTime, nullable=False, server_default=func.now())
+
+
 class TimingGraphRecord(Base):
     __tablename__ = "timing_graphs"
 

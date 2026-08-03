@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.adapters.db.mysql.database import SessionLocal
 from app.adapters.db.mysql.models import TimingChallenge, TimingChallengeAttempt, TimingGenerationJob
+from app.runtime_paths import get_required_path
 from app.timing.agent import GeneratedTimingChallenge, TimingAnalysisAgent, TimingAnalysisAgentError
 from app.timing.analysis import TimingAnalysisEngine, TimingAnalysisError, TimingAnalysisResult
 from app.timing.dag_text import TimingDagParseError, parse_timing_dag_text
@@ -104,7 +105,7 @@ def cached_challenge_to_stored(payload: dict[str, Any]) -> StoredTimingChallenge
 class TimingChallengeRepository:
     def __init__(self, db: Session, storage_dir: Path | None = None):
         self.db = db
-        self.storage_dir = storage_dir or Path(__file__).resolve().parents[2] / "generated_timing_dags"
+        self.storage_dir = storage_dir or get_required_path("GENERATED_TIMING_DAGS_DIR")
 
     def get(self, challenge_id: str) -> StoredTimingChallenge | None:
         record = self.db.query(TimingChallenge).filter(TimingChallenge.challenge_id == challenge_id).first()
