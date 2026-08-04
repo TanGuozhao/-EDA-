@@ -16,6 +16,24 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 from .database import Base
+# name=backend/app/adapters/db/mysql/models.py
+"""
+在现有 models.py 中追加所需的数据模型。
+确保运行迁移将这些表创建到 MySQL（此处仅模型声明）。
+"""
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    Text,
+    DateTime,
+    Boolean,
+    JSON,
+    func,
+    ForeignKey,
+)
+from sqlalchemy.orm import relationship
+from app.adapters.db.mysql.session import Base
 
 
 class User(Base):
@@ -290,3 +308,108 @@ class Submission(Base):
     status = Column(Enum("pending", "correct", "wrong", "error"), default="pending")
     tool_output = Column(Text)
     submitted_at = Column(DateTime, server_default=func.now())
+
+
+
+
+class RTLDesign(Base):
+    __tablename__ = "rtl_designs"
+
+    design_id = Column(String(64), primary_key=True, index=True)
+    requirement = Column(Text, nullable=False)
+    module_name = Column(String(128), nullable=False)
+    ports = Column(JSON, nullable=False)
+    reference_verilog = Column(Text, nullable=False)
+    llm_model = Column(String(128), nullable=True)
+    status = Column(String(64), nullable=False, default="created")
+    created_at = Column(DateTime, server_default=func.now())
+
+    validation_runs = relationship("RTLValidationRun", back_populates="design")
+    repair_questions = relationship("RTLRepairQuestion", back_populates="design")
+
+
+class RTLValidationRun(Base):
+    __tablename__ = "rtl_validation_runs"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    design_id = Column(String(64), ForeignKey("rtl_designs.design_id"), nullable=True)
+    input_verilog = Column(Text, nullable=False)
+    input_hash = Column(String(128), nullable=False, index=True)
+    tool_name = Column(String(64), nullable=False)
+    tool_version = Column(String(64), nullable=True)
+    command = Column(Text, nullable=True)
+    exit_code = Column(Integer, nullable=False)
+    stdout = Column(Text, nullable=True)
+    stderr = Column(Text, nullable=True)
+    logs = Column(Text, nullable=True)
+    summary = Column(JSON, nullable=True)
+    passed = Column(Boolean, nullable=False, default=False)
+    run_at = Column(DateTime, server_default=func.now())
+
+    design = relationship("RTLDesign", back_populates="validation_runs")
+
+
+class RTLRepairQuestion(Base):
+    __tablename__ = "rtl_repair_questions"
+
+    question_id = Column(String(64), primary_key=True, index=True)
+    design_id = Column(String(64), ForeignKey("rtl_designs.design_id"), nullable=True)
+    requirement = Column(Text, nullable=False)
+    module_name = Column(String(128), nullable=False)
+    ports = Column(JSON, nullable=False)
+    error_verilog = Column(Text, nullable=False)
+    reference_verilog = Column(Text, nullable=True)
+    error_type = Column(String(64), nullable=False)
+    hidden_tests = Column(JSON, nullable=True)
+    status = Column(String(64), nullable=False, default="active")
+    created_at = Column(DateTime, server_default=func.now())
+
+    design = relationship("RTLDesign", back_populates="repair_questions")
+    submissions = relationship("RTLSubmission", back_populates="question")
+
+
+class RTLSubmission(Base):
+    __tablename__ = "rtl_submissions"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    question_id = Column(String(64), ForeignKey("rtl_repair_questions.question_id"), nullable=False)
+    user_id = Column(Integer, nullable=False)
+    submitted_verilog = Column(Text, nullable=False)
+    validation_run_id = Column(Integer, ForeignKey("rtl_validation_runs.id"), nullable=True)
+    passed = Column(Boolean, nullable=False, default=False)
+    score = Column(Integer, nullable=True)
+    feedback = Column(Text, nullable=True)
+    submitted_at = Column(DateTime, server_default=func.now())
+
+    question = relationship("RTLRepairQuestion", back_populates="submissions")
+
+
+# HLS 数据模型
+class HLSChallenge(Base):
+    __tablename__ = "hls_challenges"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    challenge_id = Column(String(64), unique=True, nullable=False, index=True)
+    dag_json = Column(JSON, nullable=False)
+    resource_constraints = Column(JSON, nullable=False)
+    algorithm = Column(String(64), nullable=False)
+    correct_answer = Column(JSON, nullable=True)
+    created_at = Column(DateTime, server_default=func.now())
+
+    submissions = relationship("HLSSubmission", back_populates="challenge")
+
+
+class HLSSubmission(Base):
+    __tablename__ = "hls_submissions"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    challenge_id = Column(String(64), ForeignKey("hls_challenges.challenge_id"), nullable=False)
+    user_id = Column(Integer, nullable=False)
+    student_answer_json = Column(JSON, nullable=False)
+    passed = Column(Boolean, nullable=False, default=False)
+    score = Column(Integer, nullable=True)
+    feedback = Column(JSON, nullable=True)
+    submitted_at = Column(DateTime, server_default=func.now())
+
+    challenge = relationship("HLSChallenge", back_populates="submissions")
+
