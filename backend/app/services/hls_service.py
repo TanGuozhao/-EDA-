@@ -5,9 +5,9 @@ HLS 服务层：包含题目生成、答案计算（ASAP/ALAP 简单实现）与
 import logging
 import uuid
 from typing import Dict, Any, Tuple, List, Set
-from app.adapters.db.mysql.session import SessionLocal
+from app.adapters.db.mysql.database import SessionLocal
 from app.adapters.db.mysql.models import HLSChallenge, HLSSubmission
-from sqlalchemy.orm import Session
+
 from collections import defaultdict, deque
 
 logger = logging.getLogger("hls_service")
@@ -200,6 +200,7 @@ class HLSService:
             session.close()
 
     def submit(self, challenge_id: str, user_id: int, student_answer: Dict[str, Any]) -> Dict[str, Any]:
+    
         session = SessionLocal()
         try:
             ch = session.query(HLSChallenge).filter(HLSChallenge.challenge_id == challenge_id).first()
@@ -213,36 +214,61 @@ class HLSService:
             nodes_list = dag.get("nodes", [])
             nodes_by_id = {n["id"]: n for n in nodes_list}
 
-            # 1. 检查节点位置
-            student_positions = student_answer.get("node_positions", {})
+            # ========== 1. 统一类型转换 ==========
+            # node_positions 的 key 统一转成 int
+            raw_positions = student_answer.get("node_positions", {})
+            student_positions = {}
+            for k, v in raw_positions.items():
+                try:
+                    student_positions[int(k)] = int(v)
+                except (ValueError, TypeError):
+                    # 如果转换失败，跳过这个节点
+                    continue
+            
+            # edges 里的 from/to 统一转成 int
+            raw_edges = student_answer.get("edges", [])
+            student_edges = []
+            for e in raw_edges:
+                try:
+                    student_edges.append({
+                        "from": int(e.get("from")),
+                        "to": int(e.get("to"))
+                    })
+                except (ValueError, TypeError):
+                    # 如果转换失败，跳过这条边
+                    continue
+            student_edges_set = {(e["from"], e["to"]) for e in student_edges}
+
+            # 真实边的集合（数据库里的已经是 int）
+            true_edges_set = {(e["from"], e["to"]) for e in dag.get("edges", [])}
+
+            # ========== 2. 检查节点位置 ==========
             correct_nodes = []
             wrong_nodes = []
             for nid in nodes_by_id.keys():
-                student_cycle = student_positions.get(str(nid))
-                correct_cycle = correct_schedule.get(str(nid))  # 用字符串去查
+                student_cycle = student_positions.get(nid)  # 用 int 去查
+                correct_cycle = correct_schedule.get(str(nid))  # correct_schedule 存的是字符串 key
+                
                 if student_cycle is None:
                     wrong_nodes.append(nid)
                 else:
-                    if int(student_cycle) == int(correct_cycle):
+                    if student_cycle == int(correct_cycle):
                         correct_nodes.append(nid)
                     else:
                         wrong_nodes.append(nid)
 
-            # 2. 检查边
-            student_edges = student_answer.get("edges", [])
-            student_edges_set = {(e.get("from"), e.get("to")) for e in student_edges}
-            true_edges_set = {(e["from"], e["to"]) for e in dag.get("edges", [])}
+            # ========== 3. 检查边 ==========
             missing_edges = [{"from": f, "to": t} for (f, t) in true_edges_set - student_edges_set]
             wrong_edges = [{"from": f, "to": t} for (f, t) in student_edges_set - true_edges_set]
 
-            # 3. 检查资源约束
+            # ========== 4. 检查资源约束 ==========
             res_constraints = ch.resource_constraints or {"adders": 1, "multipliers": 1}
             usage = {}
             resource_violations = []
             for nid, node in nodes_by_id.items():
                 node_type = node.get("type", "add")
                 resname = "adders" if node_type in ("add", "sub") else "multipliers"
-                cyc = int(student_positions.get(str(nid), 0))
+                cyc = student_positions.get(nid, 0)
                 if cyc not in usage:
                     usage[cyc] = {}
                 usage[cyc][resname] = usage[cyc].get(resname, 0) + 1
@@ -253,7 +279,7 @@ class HLSService:
                     if used > cap:
                         resource_violations.append(f"周期{cyc}使用了{used}个{rname}，但只有{cap}个")
 
-            # 4. 计算分数（节点60%，边40%）
+            # ========== 5. 计算分数 ==========
             total_nodes = len(nodes_by_id)
             correct_count = len(correct_nodes)
             node_score = int(60 * correct_count / total_nodes) if total_nodes > 0 else 0

@@ -30,7 +30,6 @@ class HLSChallengeResponse(BaseModel):
     total_cycles: Optional[int]
     description: str
 
-
 class HLSGenerateRequest(BaseModel):
     # 管理端创建题目，LLM 内容
     algorithm: Optional[str] = None

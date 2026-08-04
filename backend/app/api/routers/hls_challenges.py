@@ -18,7 +18,11 @@ from app.hls import (
     schedule_hu,
     schedule_list,
 )
+from app.schemas.hls_schemas import HLSGenerateRequest
+from app.services.hls_service import HLSService
 
+import logging
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -137,21 +141,120 @@ KIND_TO_ID = {challenge.kind: challenge.id for challenge in CHALLENGES.values()}
 
 
 @router.get("/challenges/current")
+
 def get_current_challenge(kind: str = Query(default="asap")):
+    # 1. 先查数据库，取最新的一道动态生成题
+    from app.services.hls_service import HLSService
+    service = HLSService()
+    db_challenge = service.get_current_challenge()
+    
+    if db_challenge:
+        # 把数据库格式转成组长的公开格式
+        return {
+            "id": db_challenge["challenge_id"],
+            "kind": db_challenge["algorithm"].lower(),
+            "title": f"{db_challenge['algorithm']} 调度",
+            "prompt": db_challenge["description"],
+            "dag": _db_dag_to_public_dag(db_challenge["dag"]),
+            "resource_limits": db_challenge.get("resource_constraints"),
+            "initial_cycle_count": 3,  # 默认值
+        }
+    
+    # 2. 如果数据库没有动态题，fallback 到组长的静态题
     challenge_id = KIND_TO_ID.get(kind, "asap-demo")
     return _public_challenge(CHALLENGES[challenge_id])
 
 
 @router.get("/challenges/{challenge_id}")
 def get_challenge(challenge_id: str):
+    # 1. 先查数据库（你动态生成的题）
+    from app.services.hls_service import HLSService
+    service = HLSService()
+    db_challenge = service.get_challenge(challenge_id)
+    if db_challenge:
+        return db_challenge
+    
+    # 2. 如果数据库没有，再查组长的静态数据
     challenge = CHALLENGES.get(challenge_id)
     if challenge is None:
         raise HTTPException(status_code=404, detail="HLS challenge not found")
     return _public_challenge(challenge)
 
 
+
 @router.post("/challenges/{challenge_id}/submit")
 def submit_challenge(challenge_id: str, payload: HlsSubmitPayload):
+    # 1. 先查数据库（你动态生成的题）
+    from app.services.hls_service import HLSService
+    service = HLSService()
+    db_challenge = service.get_challenge(challenge_id)
+    
+    if db_challenge:
+        # 把组长的 payload 转成你的格式
+        student_answer = {
+            "node_positions": {},
+            "edges": []
+        }
+        
+        # 转换 assignments
+        if payload.assignments:
+            for node_id, assignment in payload.assignments.items():
+                # node_id 可能是字符串，保持字符串
+                student_answer["node_positions"][node_id] = assignment.cycle
+        
+        # 转换 edges
+        if payload.edges:
+            for edge in payload.edges:
+                student_answer["edges"].append({
+                    "from": edge.from_,
+                    "to": edge.to
+                })
+        
+        # 调用你自己的 submit 方法
+        try:
+            result = service.submit(challenge_id, 1, student_answer)
+            # 把你的结果转成组长的格式
+            feedback_list = []
+            feedback = result.get("feedback", {})
+            
+            # 错节点
+            for node_id in feedback.get("wrong_nodes", []):
+                feedback_list.append({
+                    "type": "wrong_node",
+                    "node_id": node_id,
+                    "message": f"{node_id} 周期错误"
+                })
+            # 漏边
+            for edge in feedback.get("missing_edges", []):
+                feedback_list.append({
+                    "type": "missing_edge",
+                    "edge": [edge["from"], edge["to"]],
+                    "message": f"缺少依赖边 {edge['from']} -> {edge['to']}"
+                })
+            # 多余边
+            for edge in feedback.get("wrong_edges", []):
+                feedback_list.append({
+                    "type": "extra_edge",
+                    "edge": [edge["from"], edge["to"]],
+                    "message": f"多余或错误连线 {edge['from']} -> {edge['to']}"
+                })
+            # 资源违规
+            for violation in feedback.get("resource_violations", []):
+                feedback_list.append({
+                    "type": "resource_violation",
+                    "message": violation
+                })
+            
+            return {
+                "correct": result.get("passed", False),
+                "score": result.get("score", 0),
+                "feedback": feedback_list
+            }
+        except Exception as e:
+            logger.exception("动态题判题失败")
+            raise HTTPException(status_code=500, detail=str(e))
+    
+    # 2. 如果数据库没有，再查组长的静态数据
     challenge = CHALLENGES.get(challenge_id)
     if challenge is None:
         raise HTTPException(status_code=404, detail="HLS challenge not found")
@@ -184,7 +287,29 @@ def _public_challenge(challenge: HlsChallenge) -> dict[str, Any]:
             for item in challenge.constraints or []
         ]
     return payload
-
+def _db_dag_to_public_dag(dag: dict) -> dict:
+    """把数据库里的 DAG 格式转成组长公开接口的格式"""
+    nodes = []
+    for n in dag.get("nodes", []):
+        nodes.append({
+            "id": str(n["id"]),  # 转成字符串
+            "duration": n.get("delay", 1),
+            "operation_type": n.get("type", "add")
+        })
+    edges = []
+    for e in dag.get("edges", []):
+        edges.append({
+            "from": str(e["from"]),
+            "to": str(e["to"])
+        })
+    start_node = str(dag.get("nodes", [{}])[0].get("id", "")) if dag.get("nodes") else ""
+    end_node = str(dag.get("nodes", [{}])[-1].get("id", "")) if dag.get("nodes") else ""
+    return {
+        "nodes": nodes,
+        "edges": edges,
+        "start_node": start_node,
+        "end_node": end_node,
+    }
 
 def _dag_payload(dag: HlsDag) -> dict[str, Any]:
     return {
@@ -369,3 +494,27 @@ def _grade_pareto(challenge: HlsChallenge, payload: HlsSubmitPayload) -> dict[st
         "score": 100 if not feedback else score,
         "feedback": feedback,
     }
+@router.post("/challenges/generate")
+def generate_challenge(req: HLSGenerateRequest):
+    """动态生成题目（带数据库持久化）"""
+    try:
+        service = HLSService()
+        alg = req.algorithm or "ASAP"
+        max_nodes = req.max_nodes or 6
+        c = service.generate_challenge(algorithm=alg, max_nodes=max_nodes)
+        return c
+    except Exception as e:
+        logger.exception("生成 HLS 题目失败")
+        raise HTTPException(status_code=500, detail=str(e))
+@router.post("/challenges/generate")
+def generate_challenge(req: HLSGenerateRequest):
+    """动态生成题目（带数据库持久化）"""
+    try:
+        service = HLSService()
+        alg = req.algorithm or "ASAP"
+        max_nodes = req.max_nodes or 6
+        c = service.generate_challenge(algorithm=alg, max_nodes=max_nodes)
+        return c
+    except Exception as e:
+        logger.exception("生成 HLS 题目失败")
+        raise HTTPException(status_code=500, detail=str(e))

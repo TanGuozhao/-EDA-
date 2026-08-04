@@ -33,7 +33,7 @@ from sqlalchemy import (
     ForeignKey,
 )
 from sqlalchemy.orm import relationship
-from app.adapters.db.mysql.session import Base
+from app.adapters.db.mysql.database import Base
 
 
 class User(Base):

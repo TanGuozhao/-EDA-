@@ -6,7 +6,7 @@ import logging
 import uuid
 from typing import Tuple, Dict, Any
 from app.services.yosys_executor import YosysExecutor
-from app.adapters.db.mysql.session import SessionLocal
+from app.adapters.db.mysql.database import SessionLocal
 from app.adapters.db.mysql.models import (
     RTLDesign,
     RTLValidationRun,

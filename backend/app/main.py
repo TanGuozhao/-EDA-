@@ -18,7 +18,7 @@ from app.api.routers import questions, submissions, timing_analysis, timing_chal
 # ========== 你本地版本的路由 ==========
 from app.api.routers import profile
 from app.api.routers import dynamic_questions
-from app.api.routers import rtl, hls  # 新加的任务一和任务二
+from app.api.routers import rtl
 
 app = FastAPI(
     title="EDA Learning Platform",
@@ -61,9 +61,9 @@ app.include_router(llm_router, prefix="/v1", tags=["llm"])
 app.include_router(profile.router, prefix="/api/profile", tags=["学习画像"])
 app.include_router(dynamic_questions.router, prefix="/api/dynamic", tags=["动态出题"])
 
-# 新加的任务一和任务二
+# 新加的任务一
 app.include_router(rtl.router, prefix="/api/rtl", tags=["RTL设计"])
-app.include_router(hls.router, prefix="/api/hls", tags=["高级综合"])
+app.include_router(hls_challenges_router, prefix="/api/hls", tags=["hls"])
 
 
 @app.get("/health")
