@@ -1,0 +1,39 @@
+{
+  "tool_id": "eda.yosys_design_analyze",
+  "name": "Yosys Design Analyze",
+  "version": "0.1.0",
+  "description": "Analyze submitted Verilog structure through a backend-controlled Yosys JSON IR flow.",
+  "allowed_agents": ["default-agent"],
+  "allowed_skills": [],
+  "input_schema": {
+    "type": "object",
+    "required": ["verilog_code"],
+    "properties": {
+      "verilog_code": {"type": "string", "minLength": 1, "maxLength": 200000},
+      "top_module": {"type": ["string", "null"], "pattern": "^[A-Za-z_][A-Za-z0-9_$]*$"}
+    },
+    "additionalProperties": false
+  },
+  "output_schema": {
+    "type": "object",
+    "required": ["valid", "status", "declared_modules", "modules", "top_ports", "structure", "diagnostics"],
+    "properties": {
+      "valid": {"type": "boolean"},
+      "status": {"type": "string"},
+      "declared_modules": {"type": "array", "items": {"type": "string"}},
+      "modules": {"type": "array"},
+      "top_ports": {"type": "array"},
+      "structure": {"type": "object"},
+      "diagnostics": {"type": "array"}
+    },
+    "additionalProperties": true
+  },
+  "timeout_seconds": 20,
+  "max_output_chars": 20000,
+  "requires_login": true,
+  "risk_level": "medium",
+  "visibility": "internal",
+  "audit_version": "2026-08-03",
+  "owner": "backend",
+  "enabled": true
+}

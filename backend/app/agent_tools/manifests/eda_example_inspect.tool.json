@@ -1,0 +1,44 @@
+{
+  "tool_id": "eda.example_inspect",
+  "name": "EDA Example Inspect",
+  "version": "0.1.0",
+  "description": "Generic example manifest for a backend-controlled project tool.",
+  "allowed_agents": [
+    "default-agent"
+  ],
+  "allowed_skills": [],
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "resource_id": {
+        "type": "string",
+        "minLength": 1
+      },
+      "query": {
+        "type": "string",
+        "maxLength": 4000
+      }
+    },
+    "additionalProperties": false
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "summary": {
+        "type": "string"
+      },
+      "metadata": {
+        "type": "object"
+      }
+    },
+    "additionalProperties": true
+  },
+  "timeout_seconds": 30,
+  "max_output_chars": 12000,
+  "requires_login": true,
+  "risk_level": "low",
+  "visibility": "internal",
+  "audit_version": "2026-08-03",
+  "owner": "backend",
+  "enabled": true
+}
