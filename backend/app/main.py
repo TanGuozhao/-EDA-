@@ -14,7 +14,7 @@ from app.api.routers.tutor import router as tutor_router
 from app.api.routers.yosys_design import router as yosys_design_router
 from app.api.routers.yosys_verilog import router as yosys_verilog_router
 from app.api.routers import questions, submissions, timing_analysis, timing_challenges
-
+from app.api.routers.experiments import drc, tapeout, manufacturing
 # ========== 你本地版本的路由 ==========
 from app.api.routers import profile
 from app.api.routers import dynamic_questions
@@ -65,6 +65,9 @@ app.include_router(dynamic_questions.router, prefix="/api/dynamic", tags=["动�
 app.include_router(rtl.router, prefix="/api/rtl", tags=["RTL设计"])
 app.include_router(hls_challenges_router, prefix="/api/hls", tags=["hls"])
 
+app.include_router(drc.router)
+app.include_router(tapeout.router)
+app.include_router(manufacturing.router)
 
 @app.get("/health")
 def health():

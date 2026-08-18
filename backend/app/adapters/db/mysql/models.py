@@ -34,8 +34,54 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 from app.adapters.db.mysql.database import Base
+from sqlalchemy.ext.declarative import declarative_base
+import datetime
 
+Base = declarative_base()
 
+class ExperimentAttempt(Base):
+    __tablename__ = "experiment_attempts"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    session_id = Column(String(128), index=True, nullable=False)
+    experiment = Column(String(64), nullable=False)  # e.g., "drc_level2"
+    state = Column(JSON, nullable=True)  # store snapshot of state
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+
+class ExperimentProgress(Base):
+    """
+    Records progress / pass info for a student's experiment/level.
+    Suitable fields:
+      - user_id: optional, if you have user accounts
+      - session_id: ties to the session
+      - experiment: e.g., 'drc', 'tapeout_scan'
+      - level_id: numeric or string level identifier
+      - passed: boolean
+      - steps: integer operation steps used
+      - hint_count: how many times student opened hints/sidebars
+      - stars: integer star rating (0-3 or 0-5)
+      - extra: JSON for any additional metadata (e.g., score breakdown)
+      - passed_at: timestamp
+    """
+    __tablename__ = "experiment_progress"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    session_id = Column(String(128), index=True, nullable=False)
+    user_id = Column(String(128), nullable=True, index=True)
+    experiment = Column(String(64), nullable=False)
+    level_id = Column(String(64), nullable=False)
+    passed = Column(Boolean, default=False)
+    steps = Column(Integer, nullable=True)
+    hint_count = Column(Integer, nullable=True)
+    stars = Column(Integer, nullable=True)
+    extra = Column(JSON, nullable=True)
+    passed_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+
+# Note:
+# - This file defines SQLAlchemy ORM models only. To persist data:
+#   - create an engine and sessionmaker elsewhere in your app
+#   - perform migrations (alembic) to create/alter tables in your MySQL DB
 class User(Base):
     __tablename__ = "users"
 
