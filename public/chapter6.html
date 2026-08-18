@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第六章 - 实验关卡</title>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #f0f2f5;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            font-size: 26px;
+            color: #1a2b4a;
+        }
+        .header .sub {
+            color: #6b7a8f;
+            font-size: 14px;
+        }
+        .api-status {
+            display: inline-block;
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+        }
+        .api-status.online {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .api-status.offline {
+            background: #ffebee;
+            color: #c62828;
+        }
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            border: 1px solid #e9edf4;
+        }
+        .section h2 {
+            font-size: 18px;
+            color: #1a2b4a;
+            margin-bottom: 4px;
+        }
+        .section .desc {
+            color: #6b7a8f;
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+        .tab-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-bottom: 16px;
+            border-bottom: 1px solid #e9edf4;
+            padding-bottom: 8px;
+        }
+        .tab-btn {
+            padding: 6px 16px;
+            border: none;
+            background: transparent;
+            border-radius: 6px 6px 0 0;
+            cursor: pointer;
+            font-size: 14px;
+            color: #6b7a8f;
+            transition: 0.2s;
+        }
+        .tab-btn.active {
+            background: #4a7cf7;
+            color: white;
+        }
+        .tab-btn:hover:not(.active) {
+            background: #f0f2f5;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .flex-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            margin-top: 8px;
+        }
+        .flex-row label {
+            font-weight: 600;
+            font-size: 14px;
+            color: #333;
+            min-width: 70px;
+        }
+        select,
+        input[type="text"] {
+            padding: 6px 12px;
+            border: 1px solid #d0d7de;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+            min-width: 120px;
+        }
+        select:focus,
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #4a7cf7;
+            box-shadow: 0 0 0 3px rgba(74, 124, 247, 0.15);
+        }
+        .btn {
+            padding: 6px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            background: #4a7cf7;
+            color: white;
+            transition: 0.2s;
+        }
+        .btn:hover {
+            background: #3a6be0;
+        }
+        .btn.secondary {
+            background: #e9edf4;
+            color: #1a2b4a;
+        }
+        .btn.secondary:hover {
+            background: #d5dce6;
+        }
+        .btn.success {
+            background: #2e7d32;
+        }
+        .result-box {
+            margin-top: 12px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            background: #f8f9fa;
+            border: 1px solid #e9edf4;
+            font-size: 14px;
+            max-height: 250px;
+            overflow: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+            display: none;
+        }
+        .result-box.show {
+            display: block;
+        }
+        .result-box.success {
+            border-color: #2e7d32;
+            background: #e8f5e9;
+        }
+        .result-box.error {
+            border-color: #c62828;
+            background: #ffebee;
+        }
+        .badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge.ok {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .badge.missing {
+            background: #ffebee;
+            color: #c62828;
+        }
+        .badge.pass {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .badge.fail {
+            background: #ffebee;
+            color: #c62828;
+        }
+        .chip-card {
+            padding: 12px 16px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e9edf4;
+        }
+        .chip-card .name {
+            font-weight: 600;
+            font-size: 15px;
+        }
+        .chip-card .detail {
+            font-size: 13px;
+            color: #6b7a8f;
+        }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .lvs-netlist {
+            font-family: monospace;
+            font-size: 13px;
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #e9edf4;
+            max-height: 180px;
+            overflow: auto;
+        }
+        .mt-8 {
+            margin-top: 8px;
+        }
+        .mb-8 {
+            margin-bottom: 8px;
+        }
+        .small-text {
+            font-size: 13px;
+            color: #6b7a8f;
+        }
+        @media (max-width: 768px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div>
+            <h1>🧪 第六章：版图与物理验证</h1>
+            <span class="sub">DRC 三小关 + LVS 网表比对</span>
+        </div>
+        <div id="api-status" class="api-status online">✅ 后端已连接</div>
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- DRC 部分 -->
+    <!-- ===================================================== -->
+    <div class="section">
+        <h2>📐 实验1：DRC 设计规则检查</h2>
+        <p class="desc">三小关递进：单规则匹配 → 多规则修复 → 牵一发而动全身</p>
+
+        <div class="tab-bar">
+            <button class="tab-btn active" data-tab="drc1" onclick="switchDrcTab('drc1')">小关卡1：单规则</button>
+            <button class="tab-btn" data-tab="drc2" onclick="switchDrcTab('drc2')">小关卡2：多规则</button>
+            <button class="tab-btn" data-tab="drc3" onclick="switchDrcTab('drc3')">小关卡3：连锁反应</button>
+        </div>
+
+        <!-- DRC 小关卡1 -->
+        <div id="drc1" class="tab-content active">
+            <p class="desc">🎯 目标：理解规则含义。老师已标注违规位置，请为每个位置匹配正确规则。</p>
+            <div id="drc1-container">
+                <div class="flex-row">
+                    <label>违规 V1</label>
+                    <select id="drc1-v1">
+                        <option value="">— 请选择 —</option>
+                        <option value="r1">最小金属间距 0.15um</option>
+                        <option value="r2">最小通孔尺寸 0.2um</option>
+                        <option value="r3">最小线宽 0.1um</option>
+                    </select>
+                </div>
+                <div class="flex-row">
+                    <label>违规 V2</label>
+                    <select id="drc1-v2">
+                        <option value="">— 请选择 —</option>
+                        <option value="r1">最小金属间距 0.15um</option>
+                        <option value="r2">最小通孔尺寸 0.2um</option>
+                        <option value="r3">最小线宽 0.1um</option>
+                    </select>
+                </div>
+                <div class="flex-row">
+                    <label>违规 V3</label>
+                    <select id="drc1-v3">
+                        <option value="">— 请选择 —</option>
+                        <option value="r1">最小金属间距 0.15um</option>
+                        <option value="r2">最小通孔尺寸 0.2um</option>
+                        <option value="r3">最小线宽 0.1um</option>
+                    </select>
+                </div>
+            </div>
+            <div class="flex-row mt-8">
+                <button class="btn" onclick="submitDRC1()">提交匹配</button>
+                <span class="small-text" id="drc1-status"></span>
+            </div>
+            <div id="drc1-result" class="result-box"></div>
+        </div>
+
+        <!-- DRC 小关卡2 -->
+        <div id="drc2" class="tab-content">
+            <p class="desc">🎯 目标：自己排查违例并修复。当前有 <strong id="drc2-count">3</strong> 处违例。</p>
+            <p class="small-text">规则查看剩余次数：<strong id="drc2-hint">3</strong> 次</p>
+            <div class="flex-row">
+                <label>修复违例:</label>
+                <input type="text" id="drc2-fix" placeholder='["v1","v2"]' style="min-width:200px;">
+                <button class="btn" onclick="submitDRC2()">提交修复</button>
+                <button class="btn secondary" onclick="drc2UseHint()">📖 查看规则 (-1次)</button>
+            </div>
+            <div id="drc2-result" class="result-box"></div>
+        </div>
+
+        <!-- DRC 小关卡3 -->
+        <div id="drc3" class="tab-content">
+            <p class="desc">🎯 目标：牵一发而动全身。在有限空间内找到全局最优解（≤15步）。</p>
+            <p class="small-text">当前步数：<strong id="drc3-steps">0</strong> / 15 | 剩余违例：<strong id="drc3-remaining">5</strong></p>
+            <div class="flex-row">
+                <label>修复位置:</label>
+                <input type="text" id="drc3-fix" placeholder='["pos1","pos2"]' style="min-width:200px;">
+                <button class="btn" onclick="submitDRC3()">提交修复</button>
+                <button class="btn secondary" onclick="drc3Reset()">重置</button>
+            </div>
+            <div id="drc3-result" class="result-box"></div>
+        </div>
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- LVS 部分 -->
+    <!-- ===================================================== -->
+    <div class="section">
+        <h2>🔬 实验2：LVS 网表比对</h2>
+        <p class="desc">对比原理图网表与版图提取网表，修改版图直到完全一致</p>
+
+        <div class="grid-2">
+            <div>
+                <div class="small-text" style="font-weight:600;">📖 原理图网表（参考）</div>
+                <div id="lvs-ref" class="lvs-netlist">加载中...</div>
+            </div>
+            <div>
+                <div class="small-text" style="font-weight:600;">🔧 版图提取网表（当前）</div>
+                <div id="lvs-ext" class="lvs-netlist">加载中...</div>
+            </div>
+        </div>
+        <div class="flex-row mt-8">
+            <button class="btn" onclick="lvsStart()">🔄 启动 LVS 会话</button>
+            <button class="btn secondary" onclick="lvsReextract()">📊 重新提取并比对</button>
+            <button class="btn secondary" onclick="lvsAddConnection()">➕ 添加缺失连接</button>
+            <span class="small-text" id="lvs-status"></span>
+        </div>
+        <div id="lvs-result" class="result-box"></div>
+    </div>
+
+</div>
+
+<script>
+    // ================================================================
+    // 全局配置
+    // ================================================================
+    const BASE_URL = 'http://127.0.0.1:8000';
+    let SESSION_ID = 'ch6-' + Date.now();
+
+    // ================================================================
+    // API 工具
+    // ================================================================
+    async function apiCall(url, method = 'GET', body = null) {
+        const options = { method, headers: { 'Content-Type': 'application/json' } };
+        if (body) options.body = JSON.stringify(body);
+        const resp = await fetch(BASE_URL + url, options);
+        if (!resp.ok) {
+            const text = await resp.text();
+            throw new Error(`HTTP ${resp.status}: ${text}`);
+        }
+        return resp.json();
+    }
+
+    function showResult(id, data, success = true) {
+        const el = document.getElementById(id);
+        el.textContent = JSON.stringify(data, null, 2);
+        el.className = 'result-box show ' + (success ? 'success' : 'error');
+    }
+
+    // ================================================================
+    // Tab 切换
+    // ================================================================
+    function switchDrcTab(tabId) {
+        document.querySelectorAll('#drc1, #drc2, #drc3').forEach(el => el.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        document.querySelectorAll('.tab-btn[data-tab]').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.tab === tabId);
+        });
+    }
+
+    // ================================================================
+    // DRC 小关卡1：单规则匹配
+    // ================================================================
+    async function submitDRC1() {
+        const selections = {
+            v1: document.getElementById('drc1-v1').value,
+            v2: document.getElementById('drc1-v2').value,
+            v3: document.getElementById('drc1-v3').value
+        };
+        const allSelected = Object.values(selections).every(v => v !== '');
+        // 模拟判题：假设正确答案是 v1→r1, v2→r3, v3→r2
+        const correct = { v1: 'r1', v2: 'r3', v3: 'r2' };
+        const passed = allSelected && selections.v1 === correct.v1 && selections.v2 === correct.v2 && selections.v3 === correct.v3;
+        const result = {
+            passed: passed,
+            selections: selections,
+            message: passed ? '✅ 全部匹配正确！通关！' : (allSelected ? '❌ 有匹配错误，请重试' : '请为所有违规选择规则')
+        };
+        showResult('drc1-result', result, passed);
+        document.getElementById('drc1-status').textContent = passed ? '✅ 通关！' : '❌ 请重试';
+    }
+
+    // ================================================================
+    // DRC 小关卡2：多规则修复
+    // ================================================================
+    let drc2State = { violations: ['v1', 'v2', 'v3'], hintsLeft: 3 };
+
+    function updateDRC2UI() {
+        document.getElementById('drc2-count').textContent = drc2State.violations.length;
+        document.getElementById('drc2-hint').textContent = drc2State.hintsLeft;
+    }
+
+    async function submitDRC2() {
+        const input = document.getElementById('drc2-fix').value;
+        try {
+            const fixes = JSON.parse(input);
+            // 模拟修复：假设修复 v1 和 v2 成功，v3 失败
+            const fixed = fixes.filter(f => f === 'v1' || f === 'v2');
+            const failed = fixes.filter(f => f === 'v3');
+            drc2State.violations = drc2State.violations.filter(v => !fixed.includes(v));
+            updateDRC2UI();
+            const passed = drc2State.violations.length === 0;
+            const result = {
+                passed: passed,
+                fixed: fixed,
+                failed: failed,
+                remaining: drc2State.violations,
+                message: passed ? '✅ 所有违例清零！通关！' : `还剩 ${drc2State.violations.length} 处违例`
+            };
+            showResult('drc2-result', result, passed);
+        } catch (e) {
+            showResult('drc2-result', { error: '请输入有效的 JSON 数组，如 ["v1","v2"]' }, false);
+        }
+    }
+
+    function drc2UseHint() {
+        if (drc2State.hintsLeft > 0) {
+            drc2State.hintsLeft--;
+            updateDRC2UI();
+            alert('规则已查看，剩余查看次数：' + drc2State.hintsLeft);
+        } else {
+            alert('⚠️ 查看次数已用完！');
+        }
+    }
+
+    // ================================================================
+    // DRC 小关卡3：连锁反应
+    // ================================================================
+    let drc3State = { steps: 0, remaining: 5, optimalLimit: 15 };
+
+    function updateDRC3UI() {
+        document.getElementById('drc3-steps').textContent = drc3State.steps;
+        document.getElementById('drc3-remaining').textContent = drc3State.remaining;
+    }
+
+    async function submitDRC3() {
+        const input = document.getElementById('drc3-fix').value;
+        try {
+            const fixes = JSON.parse(input);
+            drc3State.steps += fixes.length;
+            // 模拟连锁反应：每修一个，可能产生新的违例
+            const newViolations = fixes.length > 0 ? Math.floor(fixes.length / 2) : 0;
+            drc3State.remaining = Math.max(0, drc3State.remaining - fixes.length + newViolations);
+            updateDRC3UI();
+            const passed = drc3State.remaining === 0 && drc3State.steps <= drc3State.optimalLimit;
+            const result = {
+                passed: passed,
+                steps: drc3State.steps,
+                remaining: drc3State.remaining,
+                optimalLimit: drc3State.optimalLimit,
+                message: passed ? '✅ 所有违例清零，步数达标！通关！' :
+                    (drc3State.remaining === 0 ? `⚠️ 步数 ${drc3State.steps} 超过上限 ${drc3State.optimalLimit}` :
+                        `还剩 ${drc3State.remaining} 处违例`)
+            };
+            showResult('drc3-result', result, passed);
+        } catch (e) {
+            showResult('drc3-result', { error: '请输入有效的 JSON 数组，如 ["pos1","pos2"]' }, false);
+        }
+    }
+
+    function drc3Reset() {
+        drc3State.steps = 0;
+        drc3State.remaining = 5;
+        updateDRC3UI();
+        document.getElementById('drc3-result').className = 'result-box';
+        document.getElementById('drc3-result').textContent = '';
+    }
+
+    // ================================================================
+    // LVS
+    // ================================================================
+    let lvsSession = null;
+
+    async function lvsStart() {
+        try {
+            const data = await apiCall('/experiments/tapeout/lvs/session/start?session_id=' + SESSION_ID);
+            lvsSession = data;
+            document.getElementById('lvs-ref').textContent = JSON.stringify(data.reference || [], null, 2);
+            document.getElementById('lvs-ext').textContent = JSON.stringify(data.extracted || [], null, 2);
+            document.getElementById('lvs-status').textContent = '✅ LVS 会话已启动';
+        } catch (e) {
+            showResult('lvs-result', { error: e.message }, false);
+        }
+    }
+
+    async function lvsReextract() {
+        try {
+            const data = await apiCall('/experiments/tapeout/lvs/reextract', 'POST', { session_id: SESSION_ID });
+            showResult('lvs-result', data, data.passed);
+            if (data.extracted) {
+                document.getElementById('lvs-ext').textContent = JSON.stringify(data.extracted, null, 2);
+            }
+        } catch (e) {
+            showResult('lvs-result', { error: e.message }, false);
+        }
+    }
+
+    async function lvsAddConnection() {
+        try {
+            const data = await apiCall('/experiments/tapeout/lvs/apply-change', 'POST', {
+                session_id: SESSION_ID,
+                change: {
+                    action: 'add_device',
+                    device: { type: 'connect', content: { net: 'NET1', from: 'M1', to: 'M2' } }
+                }
+            });
+            showResult('lvs-result', { message: '连接已添加', data: data }, true);
+            await lvsReextract();
+        } catch (e) {
+            showResult('lvs-result', { error: e.message }, false);
+        }
+    }
+
+    // ================================================================
+    // 自动加载
+    // ================================================================
+    updateDRC2UI();
+    updateDRC3UI();
+</script>
+</body>
+</html>

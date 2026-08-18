@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第八章 - 实验关卡</title>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #f0f2f5;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            font-size: 26px;
+            color: #1a2b4a;
+        }
+        .header .sub {
+            color: #6b7a8f;
+            font-size: 14px;
+        }
+        .api-status {
+            display: inline-block;
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+        }
+        .api-status.online {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            border: 1px solid #e9edf4;
+        }
+        .section h2 {
+            font-size: 18px;
+            color: #1a2b4a;
+            margin-bottom: 4px;
+        }
+        .section .desc {
+            color: #6b7a8f;
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+        .flex-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            margin-top: 8px;
+        }
+        .flex-row label {
+            font-weight: 600;
+            font-size: 14px;
+            min-width: 70px;
+        }
+        select,
+        input[type="text"] {
+            padding: 6px 12px;
+            border: 1px solid #d0d7de;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+            min-width: 120px;
+        }
+        .btn {
+            padding: 6px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            background: #4a7cf7;
+            color: white;
+        }
+        .btn:hover {
+            background: #3a6be0;
+        }
+        .btn.secondary {
+            background: #e9edf4;
+            color: #1a2b4a;
+        }
+        .result-box {
+            margin-top: 12px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            background: #f8f9fa;
+            border: 1px solid #e9edf4;
+            font-size: 14px;
+            max-height: 250px;
+            overflow: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+            display: none;
+        }
+        .result-box.show {
+            display: block;
+        }
+        .result-box.success {
+            border-color: #2e7d32;
+            background: #e8f5e9;
+        }
+        .result-box.error {
+            border-color: #c62828;
+            background: #ffebee;
+        }
+        .step-card {
+            padding: 8px 14px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border: 1px solid #e9edf4;
+            cursor: grab;
+            user-select: none;
+            margin: 4px 0;
+        }
+        .step-card:active {
+            cursor: grabbing;
+        }
+        .step-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .step-list .step-card {
+            flex: 0 0 auto;
+        }
+        .chip-card {
+            padding: 12px 16px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e9edf4;
+        }
+        .chip-card .name {
+            font-weight: 600;
+            font-size: 15px;
+        }
+        .chip-card .detail {
+            font-size: 13px;
+            color: #6b7a8f;
+        }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .small-text {
+            font-size: 13px;
+            color: #6b7a8f;
+        }
+        .mt-8 {
+            margin-top: 8px;
+        }
+        @media (max-width: 768px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div>
+            <h1>🏭 第八章：制造与测试</h1>
+            <span class="sub">制造流程排队 + 封装匹配</span>
+        </div>
+        <div id="api-status" class="api-status online">✅ 后端已连接</div>
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- 制造流程排队 -->
+    <!-- ===================================================== -->
+    <div class="section">
+        <h2>📋 实验1：制造流程排队</h2>
+        <p class="desc">拖拽卡片到正确顺序：氧化 → 光刻 → 刻蚀 → 沉积 → 金属化 → CMP → 晶圆测试 → 切割</p>
+        <div id="flow-list" class="step-list"></div>
+        <div class="flex-row mt-8">
+            <button class="btn" onclick="submitFlowOrder()">提交排序</button>
+            <button class="btn secondary" onclick="resetFlow()">重置</button>
+            <span id="flow-status" class="small-text"></span>
+        </div>
+        <div id="flow-result" class="result-box"></div>
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- 封装匹配 -->
+    <!-- ===================================================== -->
+    <div class="section">
+        <h2>📦 实验2：封装匹配</h2>
+        <p class="desc">为每颗芯片匹配正确的封装类型（DIP / QFP / BGA）</p>
+        <div id="pkg-container" class="grid-2"></div>
+        <div class="flex-row mt-8">
+            <button class="btn" onclick="submitPackaging()">提交匹配</button>
+            <span id="pkg-status" class="small-text"></span>
+        </div>
+        <div id="pkg-result" class="result-box"></div>
+    </div>
+</div>
+
+<script>
+    // ================================================================
+    // 全局
+    // ================================================================
+    const BASE_URL = 'http://127.0.0.1:8000';
+    let SESSION_ID = 'ch8-' + Date.now();
+
+    function showResult(id, data, success = true) {
+        const el = document.getElementById(id);
+        el.textContent = JSON.stringify(data, null, 2);
+        el.className = 'result-box show ' + (success ? 'success' : 'error');
+    }
+
+    async function apiCall(url, method = 'GET', body = null) {
+        const options = { method, headers: { 'Content-Type': 'application/json' } };
+        if (body) options.body = JSON.stringify(body);
+        const resp = await fetch(BASE_URL + url, options);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${await resp.text()}`);
+        return resp.json();
+    }
+
+    // ================================================================
+    // 制造流程
+    // ================================================================
+    const FLOW_STEPS = [
+        { id: 'oxidation', name: '氧化' },
+        { id: 'photolith', name: '光刻' },
+        { id: 'etch', name: '刻蚀' },
+        { id: 'deposition', name: '沉积' },
+        { id: 'metallization', name: '金属化' },
+        { id: 'cmp', name: 'CMP' },
+        { id: 'wafer_test', name: '晶圆测试' },
+        { id: 'dicing', name: '切割' }
+    ];
+    let currentFlowOrder = [...FLOW_STEPS];
+
+    function renderFlow() {
+        const container = document.getElementById('flow-list');
+        container.innerHTML = '';
+        currentFlowOrder.forEach((step, i) => {
+            const div = document.createElement('div');
+            div.className = 'step-card';
+            div.textContent = (i + 1) + '. ' + step.name;
+            div.dataset.id = step.id;
+            container.appendChild(div);
+        });
+        if (window.Sortable) {
+            Sortable.create(container, {
+                animation: 150,
+                onEnd: function() {
+                    const items = container.querySelectorAll('.step-card');
+                    currentFlowOrder = [];
+                    items.forEach(el => {
+                        const found = FLOW_STEPS.find(s => s.id === el.dataset.id);
+                        if (found) currentFlowOrder.push(found);
+                    });
+                }
+            });
+        }
+    }
+
+    function resetFlow() {
+        currentFlowOrder = [...FLOW_STEPS];
+        renderFlow();
+        document.getElementById('flow-result').className = 'result-box';
+        document.getElementById('flow-result').textContent = '';
+        document.getElementById('flow-status').textContent = '';
+    }
+
+    async function submitFlowOrder() {
+        try {
+            const order = currentFlowOrder.map(s => s.id);
+            const data = await apiCall('/experiments/manufacturing/flow/apply-order', 'POST', {
+                session_id: SESSION_ID,
+                order: order
+            });
+            showResult('flow-result', data, data.passed);
+            document.getElementById('flow-status').textContent = data.passed ? '✅ 通关！' : '❌ 顺序有误';
+        } catch (e) {
+            showResult('flow-result', { error: e.message }, false);
+        }
+    }
+
+    // ================================================================
+    // 封装匹配
+    // ================================================================
+    const PKG_CHIPS = [
+        { id: 'chip_a', pins: 28, power: 100, app: 'microcontroller', best: 'QFP' },
+        { id: 'chip_b', pins: 16, power: 10, app: 'sensor', best: 'DIP' },
+        { id: 'chip_c', pins: 256, power: 500, app: 'high-speed-processor', best: 'BGA' }
+    ];
+    const PKG_OPTIONS = [
+        { id: 'DIP', name: 'DIP (6-40 引脚)' },
+        { id: 'QFP', name: 'QFP (32-256 引脚)' },
+        { id: 'BGA', name: 'BGA (64-1024 引脚)' }
+    ];
+
+    function renderPackaging() {
+        const container = document.getElementById('pkg-container');
+        container.innerHTML = '';
+        PKG_CHIPS.forEach(chip => {
+            const div = document.createElement('div');
+            div.className = 'chip-card';
+            div.innerHTML = `
+                <div class="name">${chip.id.toUpperCase()}</div>
+                <div class="detail">引脚: ${chip.pins} | 功耗: ${chip.power}mW</div>
+                <div class="detail">应用: ${chip.app}</div>
+                <div class="flex-row" style="margin-top:6px;">
+                    <label style="min-width:auto;">封装:</label>
+                    <select id="pkg-${chip.id}">
+                        <option value="">— 选择 —</option>
+                        ${PKG_OPTIONS.map(o => `<option value="${o.id}">${o.name}</option>`).join('')}
+                    </select>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    async function submitPackaging() {
+        try {
+            const matches = {};
+            PKG_CHIPS.forEach(chip => {
+                const sel = document.getElementById('pkg-' + chip.id);
+                if (sel && sel.value) matches[chip.id] = sel.value;
+            });
+            const data = await apiCall('/experiments/manufacturing/packaging/submit', 'POST', {
+                session_id: SESSION_ID,
+                matches: matches
+            });
+            showResult('pkg-result', data, data.passed);
+            document.getElementById('pkg-status').textContent = data.passed ? '✅ 全部匹配正确！' : '❌ 有匹配错误';
+        } catch (e) {
+            showResult('pkg-result', { error: e.message }, false);
+        }
+    }
+
+    // ================================================================
+    // 初始化
+    // ================================================================
+    renderFlow();
+    renderPackaging();
+</script>
+</body>
+</html>

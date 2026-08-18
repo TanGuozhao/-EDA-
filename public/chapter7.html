@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第七章 - 实验关卡</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #f0f2f5;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            font-size: 26px;
+            color: #1a2b4a;
+        }
+        .header .sub {
+            color: #6b7a8f;
+            font-size: 14px;
+        }
+        .api-status {
+            display: inline-block;
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+        }
+        .api-status.online {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            border: 1px solid #e9edf4;
+        }
+        .section h2 {
+            font-size: 18px;
+            color: #1a2b4a;
+            margin-bottom: 4px;
+        }
+        .section .desc {
+            color: #6b7a8f;
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+        .tab-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-bottom: 16px;
+            border-bottom: 1px solid #e9edf4;
+            padding-bottom: 8px;
+        }
+        .tab-btn {
+            padding: 6px 16px;
+            border: none;
+            background: transparent;
+            border-radius: 6px 6px 0 0;
+            cursor: pointer;
+            font-size: 14px;
+            color: #6b7a8f;
+        }
+        .tab-btn.active {
+            background: #4a7cf7;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .flex-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            margin-top: 8px;
+        }
+        .flex-row label {
+            font-weight: 600;
+            font-size: 14px;
+            min-width: 70px;
+        }
+        select,
+        input[type="text"] {
+            padding: 6px 12px;
+            border: 1px solid #d0d7de;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+            min-width: 120px;
+        }
+        .btn {
+            padding: 6px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            background: #4a7cf7;
+            color: white;
+        }
+        .btn:hover {
+            background: #3a6be0;
+        }
+        .btn.secondary {
+            background: #e9edf4;
+            color: #1a2b4a;
+        }
+        .btn.success {
+            background: #2e7d32;
+        }
+        .result-box {
+            margin-top: 12px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            background: #f8f9fa;
+            border: 1px solid #e9edf4;
+            font-size: 14px;
+            max-height: 250px;
+            overflow: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+            display: none;
+        }
+        .result-box.show {
+            display: block;
+        }
+        .result-box.success {
+            border-color: #2e7d32;
+            background: #e8f5e9;
+        }
+        .result-box.error {
+            border-color: #c62828;
+            background: #ffebee;
+        }
+        .badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+        .badge.ok {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .badge.missing {
+            background: #ffebee;
+            color: #c62828;
+        }
+        .small-text {
+            font-size: 13px;
+            color: #6b7a8f;
+        }
+        .mt-8 {
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div>
+            <h1>📦 第七章：Tape-out 准备</h1>
+            <span class="sub">数据完整性检查 + 扫描链设计三小关</span>
+        </div>
+        <div id="api-status" class="api-status online">✅ 后端已连接</div>
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- 数据完整性检查 -->
+    <!-- ===================================================== -->
+    <div class="section">
+        <h2>📋 实验1：数据完整性检查</h2>
+        <p class="desc">检查 Tape-out 数据包，标记异常项（通关条件：全部正确标记）</p>
+        <div id="checklist-container">
+            <div class="flex-row">
+                <label>GDSII</label>
+                <select id="chk-gds"><option value="">—</option><option value="ok">✅ 正常</option><option value="missing">❌ 缺失</option><option value="version_mismatch">⚠️ 版本不对</option><option value="format_error">📄 格式错误</option></select>
+            </div>
+            <div class="flex-row">
+                <label>LEF</label>
+                <select id="chk-lef"><option value="">—</option><option value="ok">✅ 正常</option><option value="missing">❌ 缺失</option><option value="version_mismatch">⚠️ 版本不对</option><option value="format_error">📄 格式错误</option></select>
+            </div>
+            <div class="flex-row">
+                <label>Liberty</label>
+                <select id="chk-lib"><option value="">—</option><option value="ok">✅ 正常</option><option value="missing">❌ 缺失</option><option value="version_mismatch">⚠️ 版本不对</option><option value="format_error">📄 格式错误</option></select>
+            </div>
+            <div class="flex-row">
+                <label>DRC 报告</label>
+                <select id="chk-dmr"><option value="">—</option><option value="ok">✅ 正常</option><option value="missing">❌ 缺失</option><option value="version_mismatch">⚠️ 版本不对</option><option value="format_error">📄 格式错误</option></select>
+            </div>
+            <div class="flex-row">
+                <label>SDF</label>
+                <select id="chk-sdf"><option value="">—</option><option value="ok">✅ 正常</option><option value="missing">❌ 缺失</option><option value="version_mismatch">⚠️ 版本不对</option><option value="format_error">📄 格式错误</option></select>
+            </div>
+            <div class="flex-row mt-8">
+                <button class="btn" onclick="submitChecklist()">提交检查结果</button>
+                <span id="checklist-status" class="small-text">已标记: 0 / 5</span>
+            </div>
+            <div id="checklist-result" class="result-box"></div>
+        </div>
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- 扫描链三小关 -->
+    <!-- ===================================================== -->
+    <div class="section">
+        <h2>🔗 实验2：扫描链设计</h2>
+        <p class="desc">三小关递进：连成链 → 优化链 → 故障诊断</p>
+
+        <div class="tab-bar">
+            <button class="tab-btn active" data-tab="scan1" onclick="switchScanTab('scan1')">小关卡1：连成链</button>
+            <button class="tab-btn" data-tab="scan2" onclick="switchScanTab('scan2')">小关卡2：优化链</button>
+            <button class="tab-btn" data-tab="scan3" onclick="switchScanTab('scan3')">小关卡3：故障诊断</button>
+        </div>
+
+        <!-- 扫描链 小关卡1 -->
+        <div id="scan1" class="tab-content active">
+            <p class="desc">🎯 目标：把 6 个寄存器连成一条扫描链（reg1 ~ reg6）</p>
+            <div class="flex-row">
+                <label>连接顺序:</label>
+                <input type="text" id="scan1-order" placeholder='["reg1","reg2","reg3","reg4","reg5","reg6"]' style="min-width:300px;">
+                <button class="btn" onclick="submitScan1()">提交</button>
+            </div>
+            <div id="scan1-result" class="result-box"></div>
+        </div>
+
+        <!-- 扫描链 小关卡2 -->
+        <div id="scan2" class="tab-content">
+            <p class="desc">🎯 目标：8 个寄存器中选择最优链序（成本 ≤ 20 通关）</p>
+            <div class="flex-row">
+                <label>连接顺序:</label>
+                <input type="text" id="scan2-order" placeholder='["reg1","reg2","reg3","reg4","reg5","reg6","reg7","reg8"]' style="min-width:400px;">
+                <button class="btn" onclick="submitScan2()">提交</button>
+            </div>
+            <div id="scan2-result" class="result-box"></div>
+        </div>
+
+        <!-- 扫描链 小关卡3 -->
+        <div id="scan3" class="tab-content">
+            <p class="desc">🎯 目标：根据响应向量 "1010" 推断故障寄存器位置</p>
+            <div class="flex-row">
+                <label>候选故障:</label>
+                <input type="text" id="scan3-suspects" placeholder='["reg2","reg4"]' style="min-width:200px;">
+                <button class="btn" onclick="submitScan3()">提交</button>
+            </div>
+            <div id="scan3-result" class="result-box"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ================================================================
+    // 全局
+    // ================================================================
+    const BASE_URL = 'http://127.0.0.1:8000';
+    let SESSION_ID = 'ch7-' + Date.now();
+
+    function showResult(id, data, success = true) {
+        const el = document.getElementById(id);
+        el.textContent = JSON.stringify(data, null, 2);
+        el.className = 'result-box show ' + (success ? 'success' : 'error');
+    }
+
+    async function apiCall(url, method = 'GET', body = null) {
+        const options = { method, headers: { 'Content-Type': 'application/json' } };
+        if (body) options.body = JSON.stringify(body);
+        const resp = await fetch(BASE_URL + url, options);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${await resp.text()}`);
+        return resp.json();
+    }
+
+    function switchScanTab(tabId) {
+        document.querySelectorAll('#scan1, #scan2, #scan3').forEach(el => el.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        document.querySelectorAll('.tab-btn[data-tab]').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.tab === tabId);
+        });
+    }
+
+    // ================================================================
+    // 数据完整性检查
+    // ================================================================
+    const checklistItems = ['gds', 'lef', 'lib', 'dmr', 'sdf'];
+    const checklistStatus = {};
+
+    function updateChecklistStatus() {
+        let count = 0;
+        checklistItems.forEach(id => {
+            const sel = document.getElementById('chk-' + id);
+            if (sel && sel.value) { checklistStatus[id] = sel.value;
+                count++; }
+        });
+        document.getElementById('checklist-status').textContent = '已标记: ' + count + ' / 5';
+    }
+    checklistItems.forEach(id => {
+        document.getElementById('chk-' + id).addEventListener('change', updateChecklistStatus);
+    });
+
+    async function submitChecklist() {
+        try {
+            for (const id of checklistItems) {
+                const status = checklistStatus[id] || '';
+                if (status) {
+                    await apiCall('/experiments/tapeout/mark-item', 'POST', {
+                        session_id: SESSION_ID,
+                        item_id: id,
+                        status: status
+                    });
+                }
+            }
+            const data = await apiCall('/experiments/tapeout/checklist?session_id=' + SESSION_ID);
+            showResult('checklist-result', data, data.checked === data.total);
+        } catch (e) {
+            showResult('checklist-result', { error: e.message }, false);
+        }
+    }
+
+    // ================================================================
+    // 扫描链
+    // ================================================================
+    async function submitScan1() {
+        try {
+            const order = JSON.parse(document.getElementById('scan1-order').value);
+            const data = await apiCall('/experiments/tapeout/scanchain/level1', 'POST', {
+                session_id: SESSION_ID,
+                connections: order
+            });
+            showResult('scan1-result', data, data.passed);
+        } catch (e) {
+            showResult('scan1-result', { error: e.message }, false);
+        }
+    }
+
+    async function submitScan2() {
+        try {
+            const order = JSON.parse(document.getElementById('scan2-order').value);
+            const data = await apiCall('/experiments/tapeout/scanchain/level2', 'POST', {
+                session_id: SESSION_ID,
+                connections: order,
+                resources: { adders: 1, multipliers: 1 }
+            });
+            showResult('scan2-result', data, data.passed);
+        } catch (e) {
+            showResult('scan2-result', { error: e.message }, false);
+        }
+    }
+
+    async function submitScan3() {
+        try {
+            const suspects = JSON.parse(document.getElementById('scan3-suspects').value);
+            const data = await apiCall('/experiments/tapeout/scanchain/level3', 'POST', {
+                session_id: SESSION_ID,
+                response_vector: '1010',
+                fault_candidates: suspects
+            });
+            showResult('scan3-result', data, data.passed);
+        } catch (e) {
+            showResult('scan3-result', { error: e.message }, false);
+        }
+    }
+</script>
+</body>
+</html>

@@ -17,14 +17,28 @@ export const chapters = [
 function buildLevels(chapterId, chapterTitle){
   return Array.from({ length: 8 }, (_, index) => {
     const levelNumber = index + 1
-    const isTimingAnalysis = chapterId === 5 && levelNumber === 1
+    const isExperiment = levelNumber === 8 && [6, 7, 8].includes(chapterId)
+    
+    // 实验关卡的标题和描述
+    const experimentTitles = {
+      6: '🧪 DRC/LVS 实验',
+      7: '🧪 制造准备与测试实验',
+      8: '🧪 芯片制造与封装实验'
+    }
+    const experimentDescriptions = {
+      6: '完成 DRC 三小关和 LVS 网表比对实验',
+      7: '完成数据完整性检查和扫描链设计实验',
+      8: '完成制造流程排队和封装匹配实验'
+    }
+
     return {
       id: chapterId * 100 + levelNumber,
       chapter_id: chapterId,
-      title: isTimingAnalysis ? '时序分析' : `第${levelNumber}关`,
-      description: '',
+      title: isExperiment ? experimentTitles[chapterId] : `第${levelNumber}关`,
+      description: isExperiment ? experimentDescriptions[chapterId] : '',
       status: 'unlocked',
-      pass_criteria: '完成本关任务并提交结果。',
+      pass_criteria: isExperiment ? '完成所有实验子关卡并通关。' : '完成本关任务并提交结果。',
+      is_experiment: isExperiment,  // 新增标记字段
     }
   })
 }

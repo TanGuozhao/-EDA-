@@ -12,6 +12,7 @@ import Login from './views/Login.vue'
 import Me from './views/Me.vue'
 import Records from './views/Records.vue'
 import Register from './views/Register.vue'
+import router from './router'
 import ToolVerify from './views/ToolVerify.vue'
 import TimingAnalysis from './views/TimingAnalysis.vue'
 import BlankTimingAnalysis from './views/BlankTimingAnalysis.vue'
@@ -42,10 +43,7 @@ const routes = [
   { path: '/chapter/5/timing-analysis', component: BlankTimingAnalysis, name: 'ChapterTimingAnalysis' },
 ]
 
-const router = createRouter({
-  history: createWebHistory(),
-  routes,
-})
+
 
 router.beforeEach((to) => {
   if (to.meta.requiresAuth && !isAuthenticated()) {
@@ -61,3 +59,6 @@ router.beforeEach((to) => {
 })
 
 createApp(App).use(router).mount('#app')
+const app = createApp(App)
+app.use(router)
+app.mount('#app')

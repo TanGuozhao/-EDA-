@@ -532,3 +532,172 @@ a{text-decoration:none;color:inherit}
   .eda-chat-suggestions{grid-template-columns:1fr}
   .eda-chat-welcome h2{font-size:28px}
 }
+/* ============================================================ */
+/* 实验关卡样式（六七八章专用） */
+/* ============================================================ */
+
+/* 实验卡片中的按钮组 */
+.experiment-chapter {
+  padding-bottom: 16px;
+}
+.card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+/* 进入实验按钮 */
+.btn-experiment {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  background: #4a7cf7;
+  color: #fff;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: 0.2s;
+  border: none;
+  cursor: pointer;
+}
+.btn-experiment:hover {
+  background: #3a6be0;
+  transform: translateY(-1px);
+}
+
+/* 查看关卡按钮（次要） */
+.btn-level {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  background: #e9edf4;
+  color: #1a2b4a;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: 0.2s;
+  border: none;
+  cursor: pointer;
+}
+.btn-level:hover {
+  background: #d5dce6;
+}
+
+/* 关卡详情中的操作按钮区 */
+.experiment-actions {
+  margin-top: 16px;
+  border-top: 1px solid var(--line, #d8e1e8);
+  padding-top: 16px;
+}
+.experiment-actions h4 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink, #132033);
+  margin: 0 0 4px 0;
+}
+.experiment-actions .sub {
+  font-size: 13px;
+  color: var(--muted, #667085);
+  margin: 0 0 12px 0;
+}
+.experiment-btn-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.experiment-btn-group .btn {
+  font-size: 13px;
+  padding: 6px 14px;
+  min-height: 34px;
+}
+.experiment-btn-group .btn.secondary {
+  background: #e9edf4;
+  color: #1a2b4a;
+}
+.experiment-btn-group .btn.secondary:hover {
+  background: #d5dce6;
+}
+
+/* 结果展示框 */
+.result-box {
+  margin-top: 12px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: #f8f9fa;
+  border: 1px solid #e9edf4;
+  font-size: 13px;
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  max-height: 300px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  line-height: 1.6;
+}
+.result-box.success {
+  border-color: #2e7d32;
+  background: #e8f5e9;
+  color: #1b5e20;
+}
+.result-box.error {
+  border-color: #c62828;
+  background: #ffebee;
+  color: #b71c1c;
+}
+
+/* 实验详情页中的实验信息块 */
+.experiment-info {
+  margin-top: 16px;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid var(--line, #d8e1e8);
+}
+.experiment-info h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink, #132033);
+  margin: 0 0 12px 0;
+}
+.experiment-info p {
+  margin: 6px 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.experiment-info p strong {
+  color: var(--ink, #132033);
+  font-weight: 700;
+}
+
+/* 无实验信息占位 */
+.experiment-empty {
+  padding: 20px;
+  text-align: center;
+  color: var(--muted, #667085);
+  font-size: 14px;
+  background: #fafafa;
+  border-radius: 8px;
+  border: 1px dashed var(--line, #d8e1e8);
+}
+
+/* 实验操作区容器 */
+.experiment-action-area {
+  margin-top: 20px;
+  border-top: 1px solid var(--line, #d8e1e8);
+  padding-top: 16px;
+}
+.experiment-action-area h4 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink, #132033);
+  margin: 0 0 4px 0;
+}
+.experiment-action-area .sub {
+  font-size: 13px;
+  color: var(--muted, #667085);
+  margin: 0 0 12px 0;
+}
