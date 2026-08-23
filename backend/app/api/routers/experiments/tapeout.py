@@ -41,7 +41,33 @@ def reextract(req: schemas.ReextractIn):
 # -----------------------------
 # Scan chain endpoints (new) - 自动 start
 # -----------------------------
+# ========== 扫描链 start 接口（获取初始化数据） ==========
 
+@router.get("/scanchain/level1/start")
+def start_scanchain_level1(session_id: str = Query(...)):
+    try:
+        result = service.start_scan_level1(session_id)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/scanchain/level2/start")
+def start_scanchain_level2(session_id: str = Query(...)):
+    try:
+        result = service.start_scan_level2(session_id)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/scanchain/level3/start")
+def start_scanchain_level3(session_id: str = Query(...)):
+    try:
+        result = service.start_scan_level3(session_id)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 @router.post("/scanchain/level1")
 def submit_scanchain_level1(request: ScanChainLevel1Request):
     try:
