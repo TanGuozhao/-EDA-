@@ -103,17 +103,23 @@ def submit_scanchain_level2(request: ScanChainLevel2Request):
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/scanchain/level3")
-def submit_scanchain_level3(request: ScanChainLevel3Request):
+@router.post("/scanchain/level3/fix")
+def submit_scanchain_level3_fix(request: dict):
+    """Level3 判题：接收参数调整，重新计算违规（含连锁反应）"""
     try:
-        try:
-            service.start_scan_level3(request.session_id)
-        except Exception:
-            pass
-        
         result = service.submit_scan_level3(
-            session_id=request.session_id,
-            suspects=request.fault_candidates
+            session_id=request.get("session_id"),
+            adjustments=request.get("adjustments", {})
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+@router.post("/scanchain/level2/fix")
+def apply_level2_fix(request: dict):
+    try:
+        result = service.apply_fix(
+            session_id=request.get("session_id"),
+            adjustments=request.get("adjustments", {})
         )
         return result
     except Exception as e:

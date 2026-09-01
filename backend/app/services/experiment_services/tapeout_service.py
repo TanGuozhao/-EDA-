@@ -157,12 +157,36 @@ def start_scan_level2(session_id: str) -> Dict[str, Any]:
     s = _ensure_session(session_id)
     regs = copy.deepcopy(getattr(data, "SCAN_L2_REGS", []))
     params = {
-        "length_weight": getattr(data, "SCAN_L2_LENGTH_WEIGHT", 1.0),
-        "timing_weight": getattr(data, "SCAN_L2_TIMING_WEIGHT", 1.0),
-        "optimal_cost": getattr(data, "SCAN_L2_OPTIMAL_COST", None),
+        "trace_width": 0.1,      # 当前线宽
+        "spacing": 0.15,         # 当前间距
+        "via_size": 0.2,         # 当前通孔大小
+        "violation_count": 3,    # 初始违规数量（不告诉具体位置）
+        "range": {
+            "trace_width": [0.05, 0.3],
+            "spacing": [0.1, 0.4],
+            "via_size": [0.1, 0.5]
+        },
+        "max_attempts": 3,
+        "hints_remaining": 3
     }
-    s["scan"]["l2"] = {"regs": regs, "params": params, "attempts": 0}
-    return {"level": 2, "regs": regs, "params": params, "instruction": "Connect registers to minimize total chain cost (length + timing)."}
+    
+    s["scan"]["l2"] = {
+        "regs": regs,
+        "params": params,
+        "attempts": 0,
+        "hints_used": 0,
+        "current_params": {
+            "trace_width": 0.1,
+            "spacing": 0.15,
+            "via_size": 0.2
+        }
+    }
+    return {
+        "level": 2,
+        "regs": regs,
+        "params": params,
+        "instruction": "调整版图参数（线宽、间距、通孔）消除所有 DRC 违例。"
+    }
 
 def _compute_chain_cost(order: List[str], regs: List[Dict[str,Any]], params: Dict[str,Any]) -> float:
     coords = {r["id"]:(r["x"], r["y"]) for r in regs}
@@ -205,9 +229,40 @@ def start_scan_level3(session_id: str) -> Dict[str, Any]:
     regs = copy.deepcopy(getattr(data, "SCAN_L3_REGS", []))
     true_faults = copy.deepcopy(getattr(data, "SCAN_L3_TRUE_FAULTS", []))
     fault_response = copy.deepcopy(getattr(data, "SCAN_L3_RESPONSE", []))
-    s["scan"]["l3"] = {"regs": regs, "true_faults": true_faults, "fault_response": fault_response, "attempts": 0, "created_at": datetime.datetime.utcnow().isoformat()}
-    return {"level": 3, "regs": regs, "fault_response_summary": {"len": len(fault_response)}, "instruction": "Based on given response vector, locate the faulty register(s)."}
-
+    
+    # 初始化状态（包含参数调整相关的字段）
+    s["scan"]["l3"] = {
+        "regs": regs,
+        "true_faults": true_faults,
+        "fault_response": fault_response,
+        "attempts": 0,
+        "max_attempts": 3,
+        "created_at": datetime.datetime.utcnow().isoformat(),
+        "current_params": {
+            "trace_width": 0.1,
+            "spacing": 0.15,
+            "via_size": 0.2
+        }
+    }
+    
+    # 只返回违规数量（3处），不返回具体位置和规则
+    return {
+        "level": 3,
+        "regs": regs,
+        "violation_count": 3,
+        "max_attempts": 3,
+        "instruction": "调整版图参数（线宽、间距、通孔）消除所有 DRC 违例。注意：牵一发而动全身！",
+        "current_params": {
+            "trace_width": 0.1,
+            "spacing": 0.15,
+            "via_size": 0.2
+        },
+        "range": {
+            "trace_width": [0.05, 0.3],
+            "spacing": [0.1, 0.4],
+            "via_size": [0.1, 0.5]
+        }
+    }
 def get_scan_level3_response(session_id: str) -> Dict[str, Any]:
     s = _ensure_session(session_id)
     state = s["scan"].get("l3")
@@ -215,22 +270,72 @@ def get_scan_level3_response(session_id: str) -> Dict[str, Any]:
         raise ValueError("level3 not started")
     return {"fault_response": state["fault_response"], "regs": state["regs"]}
 
-def submit_scan_level3(session_id: str, suspects: List[str]) -> Dict[str, Any]:
+def submit_scan_level3(session_id: str, adjustments: Dict[str, Any]) -> Dict[str, Any]:
     s = _ensure_session(session_id)
     state = s["scan"].get("l3")
     if not state:
         raise ValueError("level3 not started")
-    s["scan"]["l3"]["attempts"] += 1
-    true_faults = set(state["true_faults"])
-    suspects_set = set(suspects)
-    correct = list(true_faults & suspects_set)
-    false_positives = list(suspects_set - true_faults)
-    missed = list(true_faults - suspects_set)
-    passed = (len(false_positives) == 0) and (len(missed) == 0)
-    if passed:
-        stars = 3 if s["scan"]["l3"]["attempts"] == 1 else (2 if s["scan"]["l3"]["attempts"] <=3 else 1)
-        _record_progress_on_pass(session_id, experiment="scan_chain", level_id="3", steps=s["scan"]["l3"]["attempts"], hint_count=0, stars=stars)
-    return {"passed": passed, "correct": correct, "false_positives": false_positives, "missed": missed, "attempts": s["scan"]["l3"]["attempts"]}
+    
+    # 初始化尝试次数
+    if "attempts" not in state:
+        state["attempts"] = 0
+    if "max_attempts" not in state:
+        state["max_attempts"] = 3
+    if "current_params" not in state:
+        state["current_params"] = {
+            "trace_width": 0.1,
+            "spacing": 0.15,
+            "via_size": 0.2
+        }
+    
+    # 检查是否已达最大尝试次数
+    if state["attempts"] >= state["max_attempts"]:
+        return {
+            "passed": False,
+            "remaining": -1,
+            "attempts_used": state["attempts"],
+            "max_attempts": state["max_attempts"],
+            "message": "已达最大尝试次数（3次），请重新开始"
+        }
+    
+    # 更新参数
+    current = state["current_params"]
+    if "trace_width" in adjustments:
+        current["trace_width"] = adjustments["trace_width"]
+    if "spacing" in adjustments:
+        current["spacing"] = adjustments["spacing"]
+    if "via_size" in adjustments:
+        current["via_size"] = adjustments["via_size"]
+    
+    # 增加尝试次数
+    state["attempts"] += 1
+    
+    # 计算违规（牵一发而动全身：调整可能产生新违例）
+    violations = []
+    if current.get("trace_width", 0.1) < 0.08:
+        violations.append({"rule": "线宽不足", "severity": "high"})
+    if current.get("spacing", 0.15) < 0.12:
+        violations.append({"rule": "金属间距不足", "severity": "high"})
+    via = current.get("via_size", 0.2)
+    if via < 0.15 or via > 0.5:
+        violations.append({"rule": "通孔尺寸违规", "severity": "medium"})
+    
+    # 连锁反应：如果 spacing 太小，可能产生新的间距违规
+    if current.get("spacing", 0.15) < 0.1:
+        violations.append({"rule": "连锁反应：相邻线间距不足", "severity": "high"})
+    
+    remaining = len(violations)
+    passed = remaining == 0
+    
+    return {
+        "passed": passed,
+        "remaining": remaining,
+        "attempts_used": state["attempts"],
+        "max_attempts": state["max_attempts"],
+        "current_params": current,
+        "violations": violations,
+        "message": "所有违例已清零！通关！" if passed else f"还有 {remaining} 处违例（第 {state['attempts']}/{state['max_attempts']} 次尝试）"
+    }
 
 # ------------------------
 # DB write helper
@@ -262,3 +367,83 @@ def _record_progress_on_pass(session_id: str, experiment: str, level_id: str, st
                 db.rollback()
         except Exception:
             pass
+def calculate_violations(trace_width: float, spacing: float, via_size: float) -> list:
+    """根据参数计算违规列表，返回违规数量（不返回具体位置）"""
+    violations = []
+    
+    # 规则1：线宽必须 ≥ 0.08
+    if trace_width < 0.08:
+        violations.append({"rule": "线宽不足", "severity": "high"})
+    
+    # 规则2：间距必须 ≥ 0.12
+    if spacing < 0.12:
+        violations.append({"rule": "金属间距不足", "severity": "high"})
+    
+    # 规则3：通孔大小必须在 0.15 ~ 0.5 之间
+    if via_size < 0.15 or via_size > 0.5:
+        violations.append({"rule": "通孔尺寸违规", "severity": "medium"})
+    
+    return violations
+def apply_fix(session_id: str, adjustments: dict) -> Dict[str, Any]:
+    """接收调整后的参数，重新计算违规（最多3次机会）"""
+    s = _ensure_session(session_id)
+    state = s["scan"].get("l2")
+    if not state:
+        raise ValueError("level2 not started")
+    
+    # 初始化尝试次数（首次调用时设置）
+    if "attempts" not in state:
+        state["attempts"] = 0
+    if "max_attempts" not in state:
+        state["max_attempts"] = 3
+    if "current_params" not in state:
+        state["current_params"] = {
+            "trace_width": 0.1,
+            "spacing": 0.15,
+            "via_size": 0.2
+        }
+    
+    # 检查是否已达最大尝试次数
+    if state["attempts"] >= state["max_attempts"]:
+        return {
+            "passed": False,
+            "remaining": -1,
+            "attempts_used": state["attempts"],
+            "max_attempts": state["max_attempts"],
+            "message": f"已达最大尝试次数（{state['max_attempts']}次），请重新开始"
+        }
+    
+    # 更新参数
+    current = state["current_params"]
+    if "trace_width" in adjustments:
+        current["trace_width"] = adjustments["trace_width"]
+    if "spacing" in adjustments:
+        current["spacing"] = adjustments["spacing"]
+    if "via_size" in adjustments:
+        current["via_size"] = adjustments["via_size"]
+    
+    # 增加尝试次数
+    state["attempts"] += 1
+    
+    # 计算违规
+    violations = []
+    if current.get("trace_width", 0.1) < 0.08:
+        violations.append({"rule": "线宽不足", "severity": "high"})
+    if current.get("spacing", 0.15) < 0.12:
+        violations.append({"rule": "金属间距不足", "severity": "high"})
+    via = current.get("via_size", 0.2)
+    if via < 0.15 or via > 0.5:
+        violations.append({"rule": "通孔尺寸违规", "severity": "medium"})
+    
+    remaining = len(violations)
+    passed = remaining == 0
+    
+    return {
+        "passed": passed,
+        "remaining": remaining,
+        "attempts_used": state["attempts"],
+        "max_attempts": state["max_attempts"],
+        "current_params": current,
+        "violations": violations,
+        "message": "所有违例已清零！通关！" if passed else f"还有 {remaining} 处违例（第 {state['attempts']}/{state['max_attempts']} 次尝试）"
+    }
