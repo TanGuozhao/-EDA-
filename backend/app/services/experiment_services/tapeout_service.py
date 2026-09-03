@@ -35,8 +35,36 @@ def get_checklist(session_id: str) -> schemas.ChecklistOut:
     s = _ensure_session(session_id)
     items = s["checklist"]
     checked = sum(1 for it in items if it.get("status") is not None)
-    return schemas.ChecklistOut(items=items, checked=checked, total=len(items))
 
+    # 判断是否通关：所有项都已标记，且没有误报
+    # 正确规则：gds 和 sdf 应该是 missing，其他应该是 ok
+    passed = False
+    if checked == len(items):
+        # 定义正确答案
+        correct_status = {
+            "gds": "missing",
+            "lef": "ok",
+            "lib": "ok",
+            "dmr": "ok",
+            "sdf": "missing"
+        }
+        # 检查每一项是否与正确答案一致
+        all_correct = True
+        for item in items:
+            item_id = item["id"]
+            expected = correct_status.get(item_id)
+            actual = item.get("status")
+            if actual != expected:
+                all_correct = False
+                break
+        passed = all_correct
+
+    return schemas.ChecklistOut(
+        items=items,
+        checked=checked,
+        total=len(items),
+        passed=passed  # 新增字段
+    )
 def mark_item(session_id: str, item_id: str, status: str) -> schemas.MarkOut:
     s = _ensure_session(session_id)
     for it in s["checklist"]:
@@ -167,7 +195,10 @@ def start_scan_level2(session_id: str) -> Dict[str, Any]:
             "via_size": [0.1, 0.5]
         },
         "max_attempts": 3,
-        "hints_remaining": 3
+        "hints_remaining": 3,
+        "length_weight": 1.0,      # 新增
+        "timing_weight": 0.5,      # 新增
+        "optimal_cost": 20
     }
     
     s["scan"]["l2"] = {
@@ -446,4 +477,39 @@ def apply_fix(session_id: str, adjustments: dict) -> Dict[str, Any]:
         "current_params": current,
         "violations": violations,
         "message": "所有违例已清零！通关！" if passed else f"还有 {remaining} 处违例（第 {state['attempts']}/{state['max_attempts']} 次尝试）"
+    }
+def get_scan_level2_cost(session_id: str, order: List[str]) -> Dict[str, Any]:
+    """计算当前链序的成本（实时，不判题）"""
+    s = _ensure_session(session_id)
+    state = s["scan"].get("l2")
+    if not state:
+        raise ValueError("level2 not started")
+    
+    regs = state["regs"]
+    params = state["params"]
+    
+    # 检查顺序是否包含所有寄存器
+    reg_ids = [r["id"] for r in regs]
+    missing = [rid for rid in reg_ids if rid not in order]
+    duplicates = [rid for rid in order if order.count(rid) > 1]
+    
+    if missing or duplicates:
+        return {
+            "valid": False,
+            "message": "顺序必须包含所有寄存器且不重复",
+            "missing": missing,
+            "duplicates": duplicates
+        }
+    
+    # 计算成本
+    cost = _compute_chain_cost(order, regs, params)
+    optimal = params.get("optimal_cost")
+    
+    return {
+        "valid": True,
+        "cost": cost,
+        "optimal_cost": optimal,
+        "delta": cost - optimal if optimal is not None else None,
+        "total_regs": len(regs),
+        "order": order
     }

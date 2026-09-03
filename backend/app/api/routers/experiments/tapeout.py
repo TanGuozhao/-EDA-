@@ -101,7 +101,18 @@ def submit_scanchain_level2(request: ScanChainLevel2Request):
         return result
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
-
+@router.get("/scanchain/level2/cost")
+def get_scanchain_level2_cost(session_id: str = Query(...), order: str = Query(...)):
+    """实时计算扫描链成本（不判题）"""
+    try:
+        import json
+        order_list = json.loads(order)  # 前端传 JSON 字符串
+        result = service.get_scan_level2_cost(session_id, order_list)
+        return result
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="order 格式错误，请传入 JSON 数组")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/scanchain/level3/fix")
 def submit_scanchain_level3_fix(request: dict):

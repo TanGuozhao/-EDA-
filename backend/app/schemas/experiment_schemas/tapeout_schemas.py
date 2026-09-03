@@ -15,7 +15,8 @@ class ChecklistOut(BaseModel):
     items: List[ChecklistItem]
     checked: int
     total: int
-
+    passed: bool = False
+    
 class MarkIn(BaseModel):
     session_id: str
     item_id: str
