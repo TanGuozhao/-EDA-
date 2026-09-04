@@ -261,38 +261,20 @@ def start_scan_level3(session_id: str) -> Dict[str, Any]:
     true_faults = copy.deepcopy(getattr(data, "SCAN_L3_TRUE_FAULTS", []))
     fault_response = copy.deepcopy(getattr(data, "SCAN_L3_RESPONSE", []))
     
-    # 初始化状态（包含参数调整相关的字段）
     s["scan"]["l3"] = {
         "regs": regs,
         "true_faults": true_faults,
         "fault_response": fault_response,
         "attempts": 0,
         "max_attempts": 3,
-        "created_at": datetime.datetime.utcnow().isoformat(),
-        "current_params": {
-            "trace_width": 0.1,
-            "spacing": 0.15,
-            "via_size": 0.2
-        }
+        "created_at": datetime.datetime.utcnow().isoformat()
     }
     
-    # 只返回违规数量（3处），不返回具体位置和规则
     return {
         "level": 3,
         "regs": regs,
-        "violation_count": 3,
-        "max_attempts": 3,
-        "instruction": "调整版图参数（线宽、间距、通孔）消除所有 DRC 违例。注意：牵一发而动全身！",
-        "current_params": {
-            "trace_width": 0.1,
-            "spacing": 0.15,
-            "via_size": 0.2
-        },
-        "range": {
-            "trace_width": [0.05, 0.3],
-            "spacing": [0.1, 0.4],
-            "via_size": [0.1, 0.5]
-        }
+        "fault_response_summary": {"len": len(fault_response)},
+        "instruction": "Based on given response vector, locate the faulty register(s)."
     }
 def get_scan_level3_response(session_id: str) -> Dict[str, Any]:
     s = _ensure_session(session_id)
@@ -301,7 +283,8 @@ def get_scan_level3_response(session_id: str) -> Dict[str, Any]:
         raise ValueError("level3 not started")
     return {"fault_response": state["fault_response"], "regs": state["regs"]}
 
-def submit_scan_level3(session_id: str, adjustments: Dict[str, Any]) -> Dict[str, Any]:
+def submit_scan_level3(session_id: str, suspects: List[str]) -> Dict[str, Any]:
+    """扫描链 Level 3 故障诊断提交"""
     s = _ensure_session(session_id)
     state = s["scan"].get("l3")
     if not state:
@@ -312,12 +295,6 @@ def submit_scan_level3(session_id: str, adjustments: Dict[str, Any]) -> Dict[str
         state["attempts"] = 0
     if "max_attempts" not in state:
         state["max_attempts"] = 3
-    if "current_params" not in state:
-        state["current_params"] = {
-            "trace_width": 0.1,
-            "spacing": 0.15,
-            "via_size": 0.2
-        }
     
     # 检查是否已达最大尝试次数
     if state["attempts"] >= state["max_attempts"]:
@@ -329,45 +306,41 @@ def submit_scan_level3(session_id: str, adjustments: Dict[str, Any]) -> Dict[str
             "message": "已达最大尝试次数（3次），请重新开始"
         }
     
-    # 更新参数
-    current = state["current_params"]
-    if "trace_width" in adjustments:
-        current["trace_width"] = adjustments["trace_width"]
-    if "spacing" in adjustments:
-        current["spacing"] = adjustments["spacing"]
-    if "via_size" in adjustments:
-        current["via_size"] = adjustments["via_size"]
-    
     # 增加尝试次数
     state["attempts"] += 1
     
-    # 计算违规（牵一发而动全身：调整可能产生新违例）
-    violations = []
-    if current.get("trace_width", 0.1) < 0.08:
-        violations.append({"rule": "线宽不足", "severity": "high"})
-    if current.get("spacing", 0.15) < 0.12:
-        violations.append({"rule": "金属间距不足", "severity": "high"})
-    via = current.get("via_size", 0.2)
-    if via < 0.15 or via > 0.5:
-        violations.append({"rule": "通孔尺寸违规", "severity": "medium"})
+    # 故障诊断逻辑
+    true_faults = set(state.get("true_faults", []))
+    suspects_set = set(suspects)
     
-    # 连锁反应：如果 spacing 太小，可能产生新的间距违规
-    if current.get("spacing", 0.15) < 0.1:
-        violations.append({"rule": "连锁反应：相邻线间距不足", "severity": "high"})
+    correct = list(true_faults & suspects_set)
+    false_positives = list(suspects_set - true_faults)
+    missed = list(true_faults - suspects_set)
     
-    remaining = len(violations)
-    passed = remaining == 0
+    passed = (len(false_positives) == 0) and (len(missed) == 0)
+    
+    # 计算星级（仅当通关时）
+    stars = None
+    if passed:
+        stars = 3 if state["attempts"] == 1 else (2 if state["attempts"] <= 3 else 1)
+        _record_progress_on_pass(
+            session_id, 
+            experiment="scan_chain", 
+            level_id="3", 
+            steps=state["attempts"], 
+            hint_count=0, 
+            stars=stars
+        )
     
     return {
         "passed": passed,
-        "remaining": remaining,
-        "attempts_used": state["attempts"],
+        "correct": correct,
+        "false_positives": false_positives,
+        "missed": missed,
+        "attempts": state["attempts"],
         "max_attempts": state["max_attempts"],
-        "current_params": current,
-        "violations": violations,
-        "message": "所有违例已清零！通关！" if passed else f"还有 {remaining} 处违例（第 {state['attempts']}/{state['max_attempts']} 次尝试）"
+        "stars": stars
     }
-
 # ------------------------
 # DB write helper
 # ------------------------

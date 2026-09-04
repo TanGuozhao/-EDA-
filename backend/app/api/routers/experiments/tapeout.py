@@ -116,11 +116,12 @@ def get_scanchain_level2_cost(session_id: str = Query(...), order: str = Query(.
 
 @router.post("/scanchain/level3/fix")
 def submit_scanchain_level3_fix(request: dict):
-    """Level3 判题：接收参数调整，重新计算违规（含连锁反应）"""
+    """扫描链 Level 3 故障诊断提交"""
     try:
+        # 调用真正的故障诊断函数
         result = service.submit_scan_level3(
             session_id=request.get("session_id"),
-            adjustments=request.get("adjustments", {})
+            suspects=request.get("suspects", [])  # 或 fault_candidates
         )
         return result
     except Exception as e:
