@@ -274,8 +274,8 @@ def start_scan_level3(session_id: str) -> Dict[str, Any]:
         "level": 3,
         "regs": regs,
         "response_vector": fault_response,  # 新增：返回实际响应向量
-        "fault_response_summary": {"len": len(fault_response)},
-        "instruction": "Based on given response vector, locate the faulty register(s)."
+        "instruction": "根据给出的响应向量，推断故障寄存器位置。",
+        "max_attempts": 3
     }
 def get_scan_level3_response(session_id: str) -> Dict[str, Any]:
     s = _ensure_session(session_id)
