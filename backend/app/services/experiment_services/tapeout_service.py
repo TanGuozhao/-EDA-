@@ -273,6 +273,7 @@ def start_scan_level3(session_id: str) -> Dict[str, Any]:
     return {
         "level": 3,
         "regs": regs,
+        "response_vector": fault_response,  # 新增：返回实际响应向量
         "fault_response_summary": {"len": len(fault_response)},
         "instruction": "Based on given response vector, locate the faulty register(s)."
     }
@@ -284,32 +285,31 @@ def get_scan_level3_response(session_id: str) -> Dict[str, Any]:
     return {"fault_response": state["fault_response"], "regs": state["regs"]}
 
 def submit_scan_level3(session_id: str, suspects: List[str]) -> Dict[str, Any]:
-    """扫描链 Level 3 故障诊断提交"""
     s = _ensure_session(session_id)
     state = s["scan"].get("l3")
     if not state:
         raise ValueError("level3 not started")
     
-    # 初始化尝试次数
     if "attempts" not in state:
         state["attempts"] = 0
     if "max_attempts" not in state:
         state["max_attempts"] = 3
     
-    # 检查是否已达最大尝试次数
+    # 超限返回（统一字段）
     if state["attempts"] >= state["max_attempts"]:
         return {
             "passed": False,
-            "remaining": -1,
-            "attempts_used": state["attempts"],
+            "correct": [],
+            "false_positives": [],
+            "missed": [],
+            "attempts": state["attempts"],
             "max_attempts": state["max_attempts"],
+            "stars": 0,
             "message": "已达最大尝试次数（3次），请重新开始"
         }
     
-    # 增加尝试次数
     state["attempts"] += 1
     
-    # 故障诊断逻辑
     true_faults = set(state.get("true_faults", []))
     suspects_set = set(suspects)
     
@@ -319,7 +319,6 @@ def submit_scan_level3(session_id: str, suspects: List[str]) -> Dict[str, Any]:
     
     passed = (len(false_positives) == 0) and (len(missed) == 0)
     
-    # 计算星级（仅当通关时）
     stars = None
     if passed:
         stars = 3 if state["attempts"] == 1 else (2 if state["attempts"] <= 3 else 1)
